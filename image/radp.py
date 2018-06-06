@@ -55,15 +55,18 @@ def help(module):
 		raise ValueError("No module names "+str(module))
 
 
-def radial_profile_2d(data, center, mask=None):
+def _radial_profile(data, center, mask=None):
 	if mask is not None:
 		maskdata = data * (1-mask)
 	else:
 		maskdata = data
 	center_0 = np.round(center)
-	x, y = np.indices((data.shape))
-	r = np.sqrt((x - center_0[0])**2 + (y - center_0[1])**2)
-	r = r.astype(np.int)
+	meshgrids = np.indices(data.shape)  # return (x, y) or (x, y, z)
+	if len(meshgrids) != len(center):
+		raise ValueError('Data shape and center do not match each other.')
+	# eq: r = sqrt( (x - x_center)**2 + (y - y_center)**2 + (z - z_center)**2 )
+	r = np.sqrt(sum( ((grid - c)**2 for grid, c in zip(meshgrids, center_0)) ))
+	r = np.round(r).astype(np.int)
 
 	tbin = np.bincount(r.ravel(), maskdata.ravel())
 	nr = np.bincount(r.ravel())
@@ -72,34 +75,22 @@ def radial_profile_2d(data, center, mask=None):
 		r_mask[np.where(mask==1)] = 1
 		nr_mask = np.bincount(r.ravel(), r_mask.ravel())
 		nr = nr - nr_mask
-	radialprofile = np.zeros(len(nr))
-	r_pixel = np.sort(list(set(r.ravel())))
+	radialprofile = np.zeros_like(nr)
+	r_pixel = np.unique(r.ravel())  # sorted
 	nomaskr = np.where(nr>0)
 	radialprofile[nomaskr] = tbin[nomaskr] / nr[nomaskr]
-	return np.vstack([r_pixel,radialprofile]).T
+	residual = maskdata - radialprofile[r]  # subtract mean matrix
+	resid_bin = np.bincount(r.ravel(), residual.ravel()**2)
+	std_error = np.zeros_like(radialprofile)
+	valid_samples = np.where(nr > 1)
+	std_error[valid_samples] = resid_bin[valid_samples] / (nr[valid_samples] - 1)
+	return np.vstack((r_pixel, radialprofile, std_error)).T
+
+def radial_profile_2d(data, center, mask=None):
+	return _radial_profile(data, center, mask=mask)
 
 def radial_profile_3d(data, center, mask=None):
-	if mask is not None:
-		maskdata = data * (1-mask)
-	else:
-		maskdata = data
-	center_0 = np.round(center)
-	x, y, z = np.indices((data.shape))
-	r = np.sqrt((x-center_0[0])**2 + (y-center_0[1])**2 +(z-center_0[2])**2)
-	r = r.astype(np.int)
-
-	tbin = np.bincount(r.ravel(),maskdata.ravel())
-	nr = np.bincount(r.ravel())
-	if mask is not None:
-		r_mask = np.zeros(r.shape)
-		r_mask[np.where(mask==1)] = 1
-		nr_mask = np.bincount(r.ravel(), r_mask.ravel())
-		nr = nr - nr_mask
-	radialprofile = np.zeros(len(nr))
-	r_pixel = np.sort(list(set(r.ravel())))
-	nomaskr = np.where(nr>0)
-	radialprofile[nomaskr] = tbin[nomaskr] / nr[nomaskr]
-	return np.vstack([r_pixel,radialprofile]).T
+	return _radial_profile(data, center, mask=mask)
 
 def shells_2d(rads, data_shape, center):
 	x, y = np.indices(data_shape)
