@@ -1,6 +1,6 @@
 #! /bin/bash
 set -e
-root_folder=`pwd`
+root_folder=`pwd`/spipy
 
 # check whether there is anaconda installed
 Ana_path=`which python`
