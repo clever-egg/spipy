@@ -142,7 +142,7 @@ class simulation():
 		'''
 		return a lookup table, shape=(max(atom_index)+1,max(pix_r)+1)
 		[NOTICE!] for those atom index or q that are not used in simulation, the value of corresponding cell
-		of the return table is ZERO ! AND, the atom index start from 1 (which means the first row of the
+		of the return table is ZERO ! AND, the atom index start from 1 (which means the first row of the 
 		returned table is always zero)!
 		'''
 		def gaussian(a, b, c, q):
@@ -225,7 +225,7 @@ class simulation():
 				# forced to use cblas lib to accelerate
 				gemm = get_blas_funcs("gemm",[dr,dk[0].reshape((3,1))])
 				for ii,dkk in enumerate(dk):
-					temp = np.complex128(1j)*-1*gemm(1,dr,dkk.reshape((3,1)))    # matrix shape=(Nr,1)
+					temp = np.complex128(1j)*-1*2*np.pi*gemm(1,dr,dkk.reshape((3,1)))    # matrix shape=(Nr,1)
 					temp = ne.evaluate('exp(temp)')
 					if self.config_param['make_data|scatter_factor'] is True:
 						temp *= scatt[ati,pix_r[ii]].reshape(temp.shape)
@@ -236,7 +236,7 @@ class simulation():
 			else:
 				# forced to use cblas lib to accelerate
 				gemm = get_blas_funcs("gemm",[dr.astype(np.float32),dk.T.astype(np.float32)])
-				pat = np.complex128(1j)*-1*gemm(1,dr,dk.T)    # matrix shape=(Nr,Nk)
+				pat = np.complex128(1j)*-1*2*np.pi*gemm(1,dr,dk.T)    # matrix shape=(Nr,Nk)
 				pat = ne.evaluate('exp(pat)')
 
 				if self.config_param['make_data|scatter_factor'] is True:
@@ -289,8 +289,8 @@ def single_process(pdb_file, param, euler_mode='random', euler_order='zxz', eule
 		savef = h5py.File(os.path.join(save_dir, 'spipy_adu_simulation.h5'), 'w')
 		savef.create_dataset('oversampling_rate', data=dataset['oversampling_rate'])
 		savef.create_dataset('rotation_order', data=dataset['rotation_order'])
-		savef.create_dataset('patterns', data=dataset['patterns'], chunks=True, compression="gzip")
-		savef.create_dataset('euler_angles', data=dataset['euler_angles'], chunks=True, compression="gzip")
+		savef.create_dataset('patterns', data=dataset['patterns'], chunks=dataset['patterns'].shape, compression="gzip")
+		savef.create_dataset('euler_angles', data=dataset['euler_angles'], chunks=dataset['euler_angles'].shape, compression="gzip")
 		grp = savef.create_group('simu_parameters')
 		for k, v in dataset['simu_parameters'].iteritems():
 			grp.create_dataset(k, data=v)
@@ -352,9 +352,11 @@ def multi_process(save_dir, pdb_file, param, euler_mode='random', euler_order='z
 	savef = h5py.File(os.path.join(save_dir, 'spipy_adu_simulation.h5'), 'w')
 	savef.create_dataset('oversampling_rate', data=oversampling_rate)
 	savef.create_dataset('rotation_order', data=euler_order)
-	savef.create_dataset('patterns', data=patterns, chunks=True, compression="gzip")
-	savef.create_dataset('euler_angles', data=eul_angles, chunks=True, compression="gzip")
+	savef.create_dataset('patterns', data=patterns, chunks=patterns.shape, compression="gzip")
+	savef.create_dataset('euler_angles', data=eul_angles, chunks=eul_angles.shape, compression="gzip")
 	grp = savef.create_group('simu_parameters')
 	for k, v in param.iteritems():
 		grp.create_dataset(k, data=v)
 	savef.close()
+
+
