@@ -5,11 +5,12 @@ root_folder=`pwd`/spipy
 # check whether there is anaconda installed
 Ana_path=`which python`
 a='anaconda'
-if [[ $Ana_path =~ $a ]]
+b='miniconda'
+if [[ $Ana_path =~ $a ]] || [[ $Ana_path =~ $b ]]
 then
 	echo "Root folder is $root_folder"
 else
-	echo "Use anaconda2 please. Exit."
+	echo "Use anaconda2/miniconda2 please. Exit."
 	exit 1
 fi
 py_version=`conda info | grep python`
@@ -18,7 +19,7 @@ if [[ $py_version =~ $a ]]
 then
 	echo "Anaconda version authorized"
 else
-	echo "Use anaconda2 please. Exit."
+	echo "Your python version is not 2.7. Exit."
 	exit 1
 fi
 
@@ -35,14 +36,34 @@ fi
 if [ $sys = "Darwin" ]
 then
 	nowgcc=`which gcc`
-	echo "I need openmp and MPI support. Do you want to use current gcc [y/n]? : $nowgcc"
-	read answer
-	if [ $answer = "n" ]
+	echo "I need openmp and MPI support. Do you want to use current gcc? : $nowgcc [y/n]"
+	flag=0
+	while [ $flag = 0 ]
+	do
+		read answer
+		if [ $answer = "n" ]
+		then
+			echo "Give me your specific gcc path : "
+			read mygcc
+			flag=1
+		elif [ $answer = "y" ]
+		then
+			mygcc=gcc
+			flag=1
+		else
+			echo "Please give 'y' or 'n'."
+		fi
+	done
+fi
+# reject conda mpi
+if [ $sys = "Linux" ]
+then
+	nowmpicc=`which mpicc`
+	nowmpirun=`which mpirun`
+	if [ $nowmpicc = "${Ana_path%/bin/python*}/bin/mpicc" ] || [ $nowmpirun = "${Ana_path%/bin/python*}/bin/mpirun" ]
 	then
-		echo "Give me your specific gcc path : "
-		read mygcc
-	else
-		mygcc=gcc
+		echo "Please don't use MPI in anaconda/miniconda. Exit."
+		exit 1
 	fi
 fi
 
@@ -91,6 +112,25 @@ chmod u+x ./gen_quat
 if [ ! -d "${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy" ]
 then
 	ln -fs $root_folder ${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy
+else
+	echo "spipy is already in python2.7/site-packages. Over-write it? [y/n]"
+	flag=0
+	while [ $flag = 0 ]
+	do
+		read overwrite
+		if [ $overwrite = "y" ]
+		then
+			rm ${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy
+			ln -fs $root_folder ${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy
+			flag=1
+		elif [ $overwrite = "n" ]
+		then
+			echo "Skip."
+			flag=1
+		else
+			echo "Please give 'y' or 'n'."
+		fi
+	done
 fi
 
 echo "Complete!"
