@@ -94,11 +94,11 @@ class simulation():
 			elif mode=='predefined':
 				if predefined is None:
 					raise RuntimeError("I need euler angles you defined in mode 'predefined'")
-				elif len(predefined.shape)!=2 or predefined.shape[1]!=3:
+				elif len(np.array(predefined).shape)!=2 or np.array(predefined).shape[1]!=3:
 					raise RuntimeError("I can't recognize your input euler angles ...")
 				else:
-					self.euler = predefined
-					self.config_param['make_data|num_data'] = predefined.shape[0]
+					self.euler = np.array(predefined)
+					self.config_param['make_data|num_data'] = self.euler.shape[0]
 			else:
 				raise RuntimeError("I can't recognize your mode")
 		elif arange.shape==(3,2):
@@ -114,6 +114,14 @@ class simulation():
 				beta = np.linspace(arange[1].min(),arange[1].max(),pat_num+2)[1:-1]
 				gamma = np.linspace(arange[2].min(),arange[2].max(),pat_num+2)[1:-1]
 				self.euler = np.vstack([alpha,beta,gamma]).T
+			elif mode=='predefined':
+				if predefined is None:
+					raise RuntimeError("I need euler angles you defined in mode 'predefined'")
+				elif len(np.array(predefined).shape)!=2 or np.array(predefined).shape[1]!=3:
+					raise RuntimeError("I can't recognize your input euler angles ...")
+				else:
+					self.euler = np.array(predefined)
+					self.config_param['make_data|num_data'] = self.euler.shape[0]
 			else:
 				raise RuntimeError("I can't recognize your mode")
 		else:
