@@ -98,7 +98,7 @@ cd $root_folder/simulate/src
 chmod u+x compile.sh ../code/make_densities.py ../code/make_detector.py ../code/make_intensities.py
 if [ $sys = "Linux" ]
 then
-	mpicc -fopenmp make_data.c -o make_data_LINUX -I ./ -lgsl -lgslcblas -lm -O3
+	$mympicc -fopenmp make_data.c -o make_data_LINUX -I ./ -lgsl -lgslcblas -lm -O3
 	chmod u+x make_data_LINUX
 elif [ $sys = "Darwin" ]
 then
