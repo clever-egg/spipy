@@ -69,7 +69,7 @@ def out_merge(out, I, good_pix):
         out_m['PSD']      = PSD
         out_m['PSD_I']    = PSD_I
         out_m['PRTF']     = PRTF
-        out_m['PRTF_rav'] = None #PRTF_rav
+        out_m['PRTF_rav'] = np.array([0]) #PRTF_rav
         out_m['eMod']     = eMod
         out_m['eCon']     = eCon
         out_m['support']  = support
