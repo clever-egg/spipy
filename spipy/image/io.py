@@ -25,8 +25,9 @@ def help(module):
 	elif module=="xyz2pdb":
 		print("Write 3D xyz-coordinates to a pdb file")
 		print("    -> Input: xyz_array ( numpy.2darray, shape=(Np,3), colums from the 1st to 3rd is x,y,z coordinates )")
-		print("              atom_type ( list, which atoms would like to write in th file. If there is only one item, then all atoms are the same; otherwise you should give a list containing the same number of atom types with the xyz_length. For example, you can either give ['C'] or ['C','H','H','O','H'] for a 5-atom pdb file. No matter upper or lower case)")
-		print("              save_file ( str, the complete path of the file that you want to save these information to )")
+		print("              atom_type ( list, which atoms would like to write in the file. If there is only one item, then all atoms are the same; otherwise you should give a list containing the same number of atom types with the xyz_length. For example, you can either give ['C'] or ['C','H','H','O','H'] for a 5-atom pdb file. No matter upper or lower case)")
+		print("      option: b_factor  ( list or None, b_factors to write into pdb, default is None and all b_factors are 1)")
+		print("      option: save_file ( str, the complete path of the file that you want to save these information to, default is './convert.pdb' )")
 		print("    -> Output: None")
 	else:
 		raise ValueError("No module names "+str(module))
