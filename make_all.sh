@@ -2,11 +2,11 @@
 root_folder=`pwd`/spipy
 
 # get opts
-SKIP_COMPLIE=0
+SKIP_COMPILE=0
 while getopts ":xh" opt; do
 	case $opt in
 		x)
-			SKIP_COMPLIE=1
+			SKIP_COMPILE=1
 			;;
 		h)
 			echo "Use : ./make_all.sh [-x] (skip compiling MPI part)"
@@ -40,11 +40,10 @@ else
 	echo "[Error] Your python version is not 2.7. Exit."
 	exit 1
 fi
-if [ $SKIP_COMPLIE -eq 1 ]; then
-	echo "[Info] Skip compiling merge.emc and simulate.sim module."
-fi
+
 
 # decide your system
+echo "==> Authorizing operating system"
 sys=`uname`
 
 if [ $sys != "Linux" ] && [ $sys != "Darwin" ]
@@ -53,7 +52,24 @@ then
 	exit 1
 fi
 
-if [ $SKIP_COMPLIE -eq 0 ]; then
+if [ $sys = "Darwin" ] && [ $SKIP_COMPILE -ne 1 ]
+then
+	echo "[Warning] Since now I didn't add any support on compiling EMC module in MacOS, '-x' option will be added automatically. Continue ? (y/n)"
+	read answer
+	if [ answer = "n" ]; then
+		exit 1
+	fi
+	SKIP_COMPILE=1
+fi
+
+if [ $SKIP_COMPILE -eq 1 ]; then
+	echo "[Info] Skip compiling merge.emc and simulate.sim module."
+fi
+
+
+# decide mpicc
+if [ $SKIP_COMPILE -eq 0 ]; then
+	echo "==> Authorizing MPI"
 	# decide your gcc
 	if [ $sys = "Darwin" ]
 	then
@@ -65,7 +81,7 @@ if [ $SKIP_COMPLIE -eq 0 ]; then
 			read answer
 			if [ $answer = "n" ]
 			then
-				echo "==> Give me your specific gcc path : "
+				echo "Give me your specific gcc path : "
 				read mygcc
 				flag=1
 			elif [ $answer = "y" ]
@@ -84,8 +100,9 @@ if [ $SKIP_COMPLIE -eq 0 ]; then
 		nowmpirun=`which mpirun`
 		if [ $nowmpicc = "${Ana_path%/bin/python*}/bin/mpicc" ] || [ $nowmpirun = "${Ana_path%/bin/python*}/bin/mpirun" ]
 		then
-			echo "==>I can't use mpi in anaconda/miniconda to compile myself."
-			echo "   Give me your specific mpicc path (type 'n' to exit) : "
+			echo "[Warning] The default mpicc is $nowmpicc"
+			echo "   Since it is from conda env, problems may occur while using it."
+			echo "   Please give me another mpicc absolute path (type 'n' to exit) : "
 			read mympicc
 			if [ $mympicc = "n" ]
 			then
@@ -94,20 +111,22 @@ if [ $SKIP_COMPLIE -eq 0 ]; then
 		else
 			mympicc=$nowmpicc
 		fi
+		# record mpirun
+		mympirun=`dirname $mympicc`/mpirun
 	fi
 fi
 
 # start compiling ...
-echo "==> compile image/bhtsne_source"
+echo "==> Compile image/bhtsne_source"
 cd $root_folder/image/bhtsne_source
 g++ sptree.cpp tsne.cpp tsne_main.cpp -o bh_tsne -O2
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 chmod u+x bh_tsne
 
 
-if [ $SKIP_COMPLIE -eq 0 ]; then
+if [ $SKIP_COMPILE -eq 0 ]; then
 
-	echo "==> compile merge/template_emc/src"
+	echo "==> Compile merge/template_emc/src"
 	cd $root_folder/merge/template_emc/src
 	chmod u+x compile.sh ../new_project
 	if [ $sys = "Linux" ]
@@ -123,7 +142,7 @@ if [ $SKIP_COMPLIE -eq 0 ]; then
 	fi
 
 
-	echo "==> compile simulate/src"
+	echo "==> Compile simulate/src"
 	cd $root_folder/simulate/src
 	chmod u+x compile.sh ../code/make_densities.py ../code/make_detector.py ../code/make_intensities.py
 	if [ $sys = "Linux" ]
@@ -141,13 +160,62 @@ if [ $SKIP_COMPLIE -eq 0 ]; then
 fi
 
 
-echo "==> install packages"
+echo "==> Checking python packages"
+echo "[Warning] The coming procedure may install packages into your conda environment. Continue ? (y/n)"
+read answer
+if [ $answer = "n" ]
+then
+	exit 1
+fi
+
+echo "... numpy"
+tmp=`conda list | grep "numpy"`
+if [ -z "$tmp" ];then python -m pip install numpy;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
+echo "... scipy"
+tmp=`conda list | grep "scipy"`
+if [ -z "$tmp" ];then python -m pip install scipy;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
+echo "... scikit-learn"
+tmp=`conda list | grep "scikit-learn"`
+if [ -z "$tmp" ];then python -m pip install scikit-learn;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
+echo "... matplotlib"
+tmp=`conda list | grep "matplotlib"`
+if [ -z "$tmp" ];then python -m pip install matplotlib;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
+echo "... h5py"
+tmp=`conda list | grep "h5py"`
+if [ -z "$tmp" ];then python -m pip install h5py;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
+echo "... numexpr"
+tmp=`conda list | grep "numexpr"`
+if [ -z "$tmp" ];then python -m pip install numexpr;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
+echo "... psutil"
+tmp=`conda list | grep "psutil"`
+if [ -z "$tmp" ];then python -m pip install psutil;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
+echo "... mrcfile"
 tmp=`conda list | grep "mrcfile"`
 if [ -z "$tmp" ];then pip install mrcfile;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
+echo "... openmpi"
+tmp=`conda list | grep "openmpi"`
+if [ -z "$tmp" ];then conda install -c mpi4py openmpi;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
+echo "... mpi4py"
 tmp=`conda list | grep "mpi4py"`
-if [ -z "$tmp" ];then pip install mpi4py;fi
+if [ -z "$tmp" ];then conda install mpi4py;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 
@@ -181,5 +249,19 @@ else
 		fi
 	done
 fi
+
+# write info.py :
+INFO=$root_folder/info.py
+if [ -f "$INFO" ]; then
+	rm -rf $INFO
+fi
+touch $INFO
+# version
+echo "VERSION = 2.1" >> $INFO
+# mympirun
+if [ $SKIP_COMPILE -eq 0 ]; then
+	echo "EMC_MPI = $mympirun" >> $INFO
+fi
+
 
 echo "==> Complete!"

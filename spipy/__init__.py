@@ -5,7 +5,7 @@ from . import image
 from . import simulate
 from . import phase
 from . import merge
-
+from . import info
 
 def help():
     import os
