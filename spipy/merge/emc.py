@@ -47,6 +47,7 @@ def help(module):
 		print("       *option: nohup (bool, whether run in the background, default=False)")
 		print("       *option: resume (bool, whether run from previous break point, default=False)")
 		print("       *option: cluster (bool, whether you will submit jobs using job scheduling system, if yes, the function will only generate a command file at your work path without submitting it, and ignore nohup value. default=True)")
+		print("    -> Return: submit command, only if cluster == True")
 		print("[Notice] As this program costs a lot of memories, use as less processes and much threads as possible.\
 			Recommended strategy : num_proc * num_thread ~ number of cores in your CPUs. Let one cluster node support 1~2 processes. (Mentioned, large processes number may cause low precision in merging result)")
 		return
@@ -192,6 +193,7 @@ def run(num_proc, num_thread, iters, nohup=False, resume=False, cluster=True):
 		submitfile.write("# Submit the command below to your job submitting system to run emc\n")
 		submitfile.write(cmd + '\n')
 		submitfile.close()
+		return cmd
 	if not cluster:
 		cmd = os.path.join(_workpath, 'emc') + ' -c ' + os.path.join(_workpath, 'config.ini') + ' -t ' +  str(num_thread)
 		if resume:
