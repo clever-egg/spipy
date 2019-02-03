@@ -146,11 +146,16 @@ def config(params):
 		pass
 	else:
 		maskpath = params['make_detector|in_mask_file']
-		if maskpath!='None' and not os.path.exists(maskpath):
+		if maskpath is None:
+			params['make_detector|in_mask_file'] = None
+		elif not os.path.exists(maskpath):
 			raise RuntimeError("I can't find your mask file. Check it please.")
 		else:
-			cmd = "cp " + os.path.abspath(maskpath) + " " + os.path.join(_workpath, "mask.byt")
-			subprocess.check_call(cmd, shell=True)
+			masktmp = np.load(maskpath)
+			masktmp = masktmp.astype("uint8")
+			masktmp.tofile(os.path.join(_workpath, "mask.byt"))
+			#cmd = "cp " + os.path.abspath(maskpath) + " " + os.path.join(_workpath, "mask.byt")
+			#subprocess.check_call(cmd, shell=True)
 			params['make_detector|in_mask_file'] = os.path.join(_workpath, "mask.byt")
 		config = ConfigParser.ConfigParser()
 		config.read(os.path.join(_workpath,'config.ini'))
