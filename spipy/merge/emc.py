@@ -151,11 +151,15 @@ def config(params):
 		elif not os.path.exists(maskpath):
 			raise RuntimeError("I can't find your mask file. Check it please.")
 		else:
-			masktmp = np.load(maskpath)
-			masktmp = masktmp.astype("uint8")
-			masktmp.tofile(os.path.join(_workpath, "mask.byt"))
-			#cmd = "cp " + os.path.abspath(maskpath) + " " + os.path.join(_workpath, "mask.byt")
-			#subprocess.check_call(cmd, shell=True)
+			if 'byt' in os.path.splitext(maskpath)[-1] or 'bin' in os.path.splitext(maskpath)[-1]:
+				cmd = "cp " + os.path.abspath(maskpath) + " " + os.path.join(_workpath, "mask.byt")
+				subprocess.check_call(cmd, shell=True)
+			elif 'npy' in os.path.splitext(maskpath)[-1]:
+				masktmp = np.load(maskpath)
+				masktmp = masktmp.astype("uint8")
+				masktmp.tofile(os.path.join(_workpath, "mask.byt"))
+			else:
+				raise RuntimeError("I only support .byt, .bin or .npy format !")
 			params['make_detector|in_mask_file'] = os.path.join(_workpath, "mask.byt")
 		config = ConfigParser.ConfigParser()
 		config.read(os.path.join(_workpath,'config.ini'))
