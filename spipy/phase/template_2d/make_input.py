@@ -11,11 +11,10 @@ from phasing2d.utils import io_utils
 from phasing2d.utils import zero_pad
 from phasing2d.utils import circle
 
-if __name__ == "__main__":
-    args = io_utils.parse_cmdline_args()
-    
+def make_input(args_config):
+
     config = ConfigParser.ConfigParser()
-    config.read(args.config)
+    config.read(args_config)
     
     params = io_utils.parse_parameters(config)
 
@@ -111,4 +110,11 @@ if __name__ == "__main__":
     # write to file
     print 'writing to file...', params['output']['path']
     io_utils.write_input_h5(params['output']['path'], diff, support, \
-            beamstop, solid_known, args.config)
+            beamstop, solid_known, args_config)
+
+
+if __name__ == "__main__":
+    args = io_utils.parse_cmdline_args()
+    
+    make_input(args.config)
+    

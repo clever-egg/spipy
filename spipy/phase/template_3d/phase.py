@@ -181,6 +181,6 @@ if __name__ == "__main__":
     if rank == 0 :
         utils.io_utils.write_output_h5(params['output']['path'], diff, out['I'], support, out['support'], \
                                       good_pix, sample_known, out['O'], out['eMod'], out['eCon'], None,   \
-                                      out['PRTF'], None, out['PSD'], out['PSD_I'], out['B_rav'])
+                                      out['PRTF'], out['PRTF_rav'], out['PSD'], out['PSD_I'], out['B_rav'])
         print("\nDone ! Phasing result is stored in " + params['output']['path'] + '/output.h5\n')
 
