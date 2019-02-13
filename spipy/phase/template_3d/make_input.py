@@ -14,7 +14,7 @@ from phasing3d.utils import circle
 def make_input(args_config):
 
     config = ConfigParser.ConfigParser()
-    config.read(args.config)
+    config.read(args_config)
     
     params = io_utils.parse_parameters(config)
 
