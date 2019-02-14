@@ -37,10 +37,10 @@ def help(module):
 
 class simulation():
 
-	config_param = {'parameters|detd' : 200, 'parameters|lambda' : 2.5, \
+	config_param = {'parameters|detd' : 200.0, 'parameters|lambda' : 2.5, \
 					'parameters|detsize' : 128, 'parameters|pixsize' : 0.3, \
 					'parameters|stoprad' : 0, 'parameters|polarization' : 'x', \
-					'make_data|num_data' : 100, 'make_data|fluence' : 1e14, \
+					'make_data|num_data' : 100, 'make_data|fluence' : 1.5e14, \
 					'make_data|scatter_factor' : False, 'make_data|ram_first' : True, \
 					'make_data|poisson' : False}
 	euler = None  # alpha 0,2pi ; beta 0,pi ; gamma 0,2pi  shape=(Ne,3) [intrisinc]
