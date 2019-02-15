@@ -37,6 +37,7 @@ class my_argparser(argparse.ArgumentParser):
         self.add_argument("-c", "--config_file", dest="config_file",
                           help="config file (defaults to config.ini)")
         self.add_argument("-v", "--verbose", dest="vb", action="store_true", default=False)
+        self.add_argument("-k", "--skip_check", dest="skip_check", action="store_true", default=False)
         self.add_argument("-m", "--main_dir", dest="main_dir",
                           help="relative path to main repository directory\n(where data aux utils are stored)")
 

@@ -17,6 +17,7 @@ if __name__ == "__main__":
     parser.add_argument("--skip_intensities", dest="skip_intensities", action="store_true", default=False)
     parser.add_argument("--skip_detector", dest="skip_detector", action="store_true", default=False)
     parser.add_argument("--skip_data", dest="skip_data", action="store_true", default=False)
+    parser.add_argument("--skip_check", dest="skip_check", action="store_true", default=False)
     args = parser.parse_args()
     logging.info("\n\nStarting.... setup")
     logging.info(' '.join(sys.argv))
@@ -40,18 +41,24 @@ if __name__ == "__main__":
     # Sequentially step through the simulation workflow
     if not args.skip_densities:
         cmd = "./make_densities.py -c " + args.config_file + " -v"
+        if args.skip_check:
+            cmd = cmd + " -k"
         logging.info(20*"=" + "\n")
         logging.info(20*"=" + "\n" + cmd)
         subprocess.call(cmd, shell=True)
 
     if not args.skip_intensities:
         cmd = "./make_intensities.py -c " + args.config_file + " -v"
+        if args.skip_check:
+            cmd = cmd + " -k"
         logging.info(20*"=" + "\n")
         logging.info(20*"=" + "\n" + cmd)
         subprocess.call(cmd, shell=True)
 
     if not args.skip_detector:
         cmd = "./make_detector.py -c " + args.config_file + " -v"
+        if args.skip_check:
+            cmd = cmd + " -k"
         logging.info(20*"=" + "\n")
         logging.info(20*"=" + "\n" + cmd)
         subprocess.call(cmd, shell=True)

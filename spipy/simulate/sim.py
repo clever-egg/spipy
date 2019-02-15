@@ -36,7 +36,7 @@ def help(module):
         return
     elif module=="run_simulation":
         print("This function is used to start simulation")
-        print("    -> No input required")
+        print("    -> Input: skip_check (skip checking files' overwriting and unusual oversampling rate, defalt = False)")
         return
     else:
         raise ValueError("No module names "+str(module))
@@ -83,7 +83,7 @@ def generate_config_files(pdb_file, workpath = None, name=None, params = {}):
             section, par = key.split('|')
             config.set(section, par, params[key])
     else:
-        print("\n Generate default config file. Please run generate_config_file('help') to see details.")
+        print("\n Generate default config file.")
     config.set("make_densities","pdb_code", pdb_file.split('/')[-1].split('.')[0])
     with open(work_dir + '/config.ini', 'w') as f:
         config.write(f)
@@ -107,7 +107,7 @@ def generate_config_files(pdb_file, workpath = None, name=None, params = {}):
     subprocess.check_call(cmd, shell=True)
     subprocess.check_call(work_dir + '/src/compile.sh', shell=True)
 
-def run_simulation(help = None):
+def run_simulation(skip_check = False):
     global work_dir
     if work_dir is None:
         print("Please run 'sim.generate_config_files(pdb_file, workdir = None, name=None, params = {})' first !")
@@ -119,6 +119,8 @@ def run_simulation(help = None):
     pat_num = config.get("make_data","num_data")
     save_pdb = os.path.join(work_dir,'data/') + config.get("make_densities","pdb_code")
     cmd = 'python ' + os.path.join(work_dir,'sim_setup.py') + ' -c ' + os.path.join(work_dir,"config.ini")
+    if skip_check:
+        cmd = cmd + ' --skip_check'
     subprocess.check_call(cmd, shell=True)
     cmd = 'python ' + os.path.join(work_dir,'py_src/read_emc.py') + ' ' + save_pdb + ' ' + pat_num
     subprocess.check_call(cmd, shell=True)

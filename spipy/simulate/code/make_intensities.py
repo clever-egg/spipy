@@ -14,7 +14,12 @@ if __name__ == "__main__":
 
     den_file    = os.path.join(args.main_dir, read_config.get_filename(args.config_file, 'make_intensities', "in_density_file"))
     intens_file = os.path.join(args.main_dir, read_config.get_filename(args.config_file, 'make_intensities', "out_intensity_file"))
-    to_write    = py_utils.check_to_overwrite(intens_file)
+    
+    if args.skip_check:
+        to_write    = True
+    else:
+        to_write    = py_utils.check_to_overwrite(intens_file)
+
     logging.info("\n\nStarting.... make_intensities")
     logging.info(' '.join(sys.argv))
 
@@ -28,9 +33,10 @@ if __name__ == "__main__":
         logging.info('Volume size: %d' % fov_len) 
         den         = py_utils.read_density(den_file, binary=True)
         min_over    = float(fov_len)/den.shape[0]
-        if min_over > 12:
-            if py_utils.confirm_oversampling(min_over) is False:
-                sys.exit(0)
+        if not args.skip_check:
+            if min_over > 12:
+                if py_utils.confirm_oversampling(min_over) is False:
+                    sys.exit(0)
         timer.reset_and_report("Reading densities") if args.vb else timer.reset()
 
         pad_den     = np.zeros(3*(fov_len,))

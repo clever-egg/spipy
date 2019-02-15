@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
-	fprintf(stderr, "Generating data with parameters from %s\n", config_fname) ;
+	fprintf(stdout, "Generating data with parameters from %s\n", config_fname) ;
 	
 	if (setup(config_fname))
 		return 2 ;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     if (scale_method == FLUENCE) {
 		rescale = fluence*pow(2.81794e-9, 2) ;
 		mean_count = rescale*intens_ave ;
-		fprintf(stderr, "Target mean_count = %f\n", mean_count) ;
+		fprintf(stdout, "Target mean_count = %f\n", mean_count) ;
 	}
 	else if (scale_method == COUNTS)
 		rescale = mean_count / intens_ave ;
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 			actual_mean_count += ones[d] ;
 
 			if (rank == 0)
-				fprintf(stderr, "\rFinished d = %d", d) ;
+				fprintf(stdout, "\rFinished d = %d", d) ;
 		}
 		
 		free(view) ;
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
 	}
 	fclose(fp);
 	
-	fprintf(stderr, "\rFinished d = %d\n", num_data) ;
+	fprintf(stdout, "\rFinished d = %d\n", num_data) ;
 	actual_mean_count /= num_data ;
 	
 	fp = fopen(output_fname, "wb") ;
@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
 	fclose(fp) ;
 	
 	gettimeofday(&t2, NULL) ;
-	fprintf(stderr, "Generated %d frames with %f photons/frame\n", num_data, actual_mean_count) ;
-	fprintf(stderr, "Time taken = %f s\n", (double)(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.) ;
+	fprintf(stdout, "Generated %d frames with %f photons/frame\n", num_data, actual_mean_count) ;
+	fprintf(stdout, "Time taken = %f s\n", (double)(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.) ;
 
 	free_mem() ;
 	
@@ -301,7 +301,7 @@ int setup(char *config_fname) {
 		}
 		else {
 			scale_method = COUNTS ;
-			fprintf(stderr, "Target mean_count = %f\n", mean_count) ;
+			fprintf(stdout, "Target mean_count = %f\n", mean_count) ;
 		}
 	}
 	else {
