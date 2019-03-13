@@ -76,13 +76,16 @@ def cluster_fSpec(dataset, mask=None ,low_filter=0.3, decomposition='SVD', ncomp
 	# normalization
 	center_data = (fdataset.shape[1]/2, fdataset.shape[2]/2)
 	fdataset = fdataset[:, center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
-	# fmask = mask[center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
+	if mask is not None:
+		fmask = mask[center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
+	else:
+		fmask = None
 	center_data = (fdataset.shape[1]/2.0, fdataset.shape[2]/2.0)
 	saxs_data = saxs.cal_saxs(fdataset)
-	saxs_intens = radp.radial_profile_2d(saxs_data, center_data)
+	saxs_intens = radp.radial_profile_2d(saxs_data, center_data, fmask)
 	dataset_norm = np.zeros(fdataset.shape)
 	for ind,pat in enumerate(fdataset):
-		pat_normed = radp.radp_norm_2d(saxs_intens[:,1], pat, center_data)
+		pat_normed = radp.radp_norm_2d(saxs_intens[:,1], pat, center_data, fmask)
 		dataset_norm[ind] = pat_normed
 		if verbose:
 			sys.stdout.write("Processing " + str(ind) + "/" + str(len(fdataset)) + " ...\r")
@@ -149,7 +152,10 @@ def cluster_fTSNE(dataset, mask=None, low_filter=0.3, no_dims=2, perplexity=20, 
 	# normalization
 	center_data = (fdataset.shape[1]/2, fdataset.shape[2]/2)
 	fdataset = fdataset[:, center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
-	fmask = mask[center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
+	if mask is not None:
+		fmask = mask[center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
+	else:
+		fmask = None
 	center_data = (fdataset.shape[1]/2.0, fdataset.shape[2]/2.0)
 	saxs_data = saxs.cal_saxs(fdataset)
 	saxs_intens = radp.radial_profile_2d(saxs_data, center_data, fmask)
