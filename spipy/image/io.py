@@ -32,7 +32,7 @@ def help(module):
 	elif module=="readpdb_full":
 		print("Read pdb file and output full infomation")
 		print("    -> Input: pdb_file ( str, pdb file path )")
-		print("    -> Output: list, [atom_1, atom_2, ...] where atom_?=[atom-index,atom-name,atom-mass,x,y,z,resi-index,resi-name]")
+		print("    -> Output: a dict, {res-index:[res-name,{atom-name:[atom-index,atom-mass,x,y,z,occupancy,b-factor]}]}")
 	else:
 		raise ValueError("No module names "+str(module))
 
@@ -76,13 +76,13 @@ def _readpdb(pdb_file):
 	return atoms
 
 def readpdb_full(pdb_file):
-	# return [atom-index,atom-name,atom-mass,x,y,z,res-index,res-name]
+	# return {res-index:[res-name,{atom-name:[atom-index,atom-mass,x,y,z,occupancy,b-factor]}]}
 	from spipy.simulate.code import process_pdb
 	atom_table_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),'simulate/aux/henke_table')
 
 	with open(pdb_file, 'r') as fp:
 		lines = fp.readlines()
-	pdb = []
+	pdb = {}
 	for line in lines:
 		if not line.startswith("ATOM"):
 			continue
@@ -102,7 +102,9 @@ def readpdb_full(pdb_file):
 		else:
 			a_index = -1
 			a_mass = -1
-		pdb.append([a_index, a_name, a_mass, x, y, z, res_index, res_name])
+		if not pdb.has_key(res_index):
+			pdb[res_index] = [res_name, {}]
+		pdb[res_index][1][a_name]=[a_index, a_mass, x, y, z, occup, b_factor]
 	return pdb
 
 
