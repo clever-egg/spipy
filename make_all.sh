@@ -260,7 +260,7 @@ touch $INFO
 echo "VERSION = 2.1" >> $INFO
 # mympirun
 if [ $SKIP_COMPILE -eq 0 ]; then
-	echo "EMC_MPI = $mympirun" >> $INFO
+	echo "EMC_MPI = '$mympirun'" >> $INFO
 fi
 
 
