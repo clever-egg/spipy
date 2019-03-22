@@ -29,6 +29,10 @@ def help(module):
 		print("      option: b_factor  ( list or None, b_factors to write into pdb, default is None and all b_factors are 1)")
 		print("      option: save_file ( str, the complete path of the file that you want to save these information to, default is './convert.pdb' )")
 		print("    -> Output: None")
+	elif module=="readpdb_full":
+		print("Read pdb file and output full infomation")
+		print("    -> Input: pdb_file ( str, pdb file path )")
+		print("    -> Output: list, [atom_1, atom_2, ...] where atom_?=[atom-index,atom-name,atom-mass,x,y,z,resi-index,resi-name]")
 	else:
 		raise ValueError("No module names "+str(module))
 
@@ -70,6 +74,37 @@ def _readpdb(pdb_file):
 		atom_scatt[atom.upper()] = [index,mass]
 	atoms = process_pdb.get_atom_coords(pdb_file, atom_scatt)
 	return atoms
+
+def readpdb_full(pdb_file):
+	# return [atom-index,atom-name,atom-mass,x,y,z,res-index,res-name]
+	from spipy.simulate.code import process_pdb
+	atom_table_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),'simulate/aux/henke_table')
+
+	with open(pdb_file, 'r') as fp:
+		lines = fp.readlines()
+	pdb = []
+	for line in lines:
+		if not line.startswith("ATOM"):
+			continue
+		a_name = line[11:17].strip()
+		res_name = line[17:20].strip()
+		res_index = int(line[22:26])
+		x = float(line[30:38])
+		y = float(line[38:46])
+		z = float(line[46:54])
+		occup = float(line[54:60])
+		b_factor = float(line[60:66])
+		atom = line[66:].strip()
+		if len(atom)>2 or len(atom)==0:
+			atom = atom[:len(atom)-2]
+		if len(atom) > 0:
+			a_index, a_mass = process_pdb.find_mass(atom_table_path, atom)
+		else:
+			a_index = -1
+			a_mass = -1
+		pdb.append([a_index, a_name, a_mass, x, y, z, res_index, res_name])
+	return pdb
+
 
 def pdb2density(pdb_file, resolution):
 	from spipy.simulate.code import process_pdb
