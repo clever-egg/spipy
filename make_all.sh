@@ -170,37 +170,37 @@ fi
 
 echo "... numpy"
 tmp=`conda list | grep "numpy"`
-if [ -z "$tmp" ];then python -m conda install numpy;fi
+if [ -z "$tmp" ];then conda install numpy;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... scipy"
 tmp=`conda list | grep "scipy"`
-if [ -z "$tmp" ];then python -m conda install scipy;fi
+if [ -z "$tmp" ];then conda install scipy;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... scikit-learn"
 tmp=`conda list | grep "scikit-learn"`
-if [ -z "$tmp" ];then python -m conda install scikit-learn;fi
+if [ -z "$tmp" ];then conda install scikit-learn;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... matplotlib"
 tmp=`conda list | grep "matplotlib"`
-if [ -z "$tmp" ];then python -m conda install matplotlib;fi
+if [ -z "$tmp" ];then conda install matplotlib;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... h5py"
 tmp=`conda list | grep "h5py"`
-if [ -z "$tmp" ];then python -m conda install h5py;fi
+if [ -z "$tmp" ];then conda install h5py;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... numexpr"
 tmp=`conda list | grep "numexpr"`
-if [ -z "$tmp" ];then python -m pip install numexpr;fi
+if [ -z "$tmp" ];then conda install numexpr;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... psutil"
 tmp=`conda list | grep "psutil"`
-if [ -z "$tmp" ];then python -m pip install psutil;fi
+if [ -z "$tmp" ];then conda install psutil;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... mrcfile"
