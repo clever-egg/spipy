@@ -31,7 +31,7 @@ else
 	echo "[Error] Use anaconda2/miniconda2 please. Exit."
 	exit 1
 fi
-py_version=`python --version`
+py_version=`conda list | grep "python"`
 a='2.7'
 if [[ $py_version =~ $a ]]
 then
