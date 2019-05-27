@@ -37,7 +37,7 @@ if [[ $py_version =~ $a ]]
 then
 	echo "==> Anaconda version authorized"
 else
-	echo "[Error] Your python version is not 2.7. Exit."
+	echo "[Error] Your python version is $py_version. Exit."
 	exit 1
 fi
 
