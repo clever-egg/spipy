@@ -215,7 +215,7 @@ if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... mpi4py"
 tmp=`conda list | grep "mpi4py"`
-if [ -z "$tmp" ];then conda install mpi4py;fi
+if [ -z "$tmp" ];then conda install -c conda-forge mpi4py;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 
