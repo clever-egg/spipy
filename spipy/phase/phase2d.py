@@ -180,7 +180,7 @@ def run(num_proc=1, nohup=False, cluster=False):
 			submitfile.write(cmd + '\n')
 			submitfile.close()
 		else:
-			subprocess.check_call(cmd, shell=True)
+			subprocess.call(cmd, shell=True)
 	else:
 		raise RuntimeError('num_proc should be a positive integer ! Exit.')
 
