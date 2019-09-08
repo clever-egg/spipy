@@ -161,7 +161,7 @@ fi
 
 
 echo "==> Checking python packages"
-echo "[Warning] The coming procedure may install packages into your conda environment. Continue ? (y/n)"
+echo "[Warning] The coming procedure may install packages into your conda env. Continue ? (y/n)"
 read answer
 if [ $answer = "n" ]
 then
@@ -170,7 +170,7 @@ fi
 
 echo "... numpy"
 tmp=`conda list | grep "numpy"`
-if [ -z "$tmp" ];then conda install numpy;fi
+if [ -z "$tmp" ];then conda install numpy=1.16.2;fi
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 
 echo "... scipy"
