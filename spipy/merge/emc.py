@@ -189,9 +189,17 @@ def run(num_proc, num_thread, iters, nohup=False, resume=False, cluster=True):
 		raise ValueError("Please call emc.new_project(...) and emc.config(...) first ! Exit")
 
 	code_path = __file__.split('/emc.py')[0] + '/template_emc'
+
 	if cluster:
-		print("\n Dry run on cluster, check submit_job.sh for details.\n")
-		cmd = 'mpirun -np ' + str(num_proc) + ' ./emc -c config.ini' + ' -t ' +  str(num_thread)
+		import spipy.info as info
+
+		try:
+			mpirun = info.EMC_MPI
+		except:
+			mpirun = "mpirun"
+
+		print("\n Make directories, check submit_job.sh for details.\n")
+		cmd = mpirun + ' -np ' + str(num_proc) + ' ./emc -c config.ini' + ' -t ' +  str(num_thread)
 		# check resume and nohup
 		if resume:
 			cmd = cmd + ' -r ' + str(iters)
@@ -203,7 +211,13 @@ def run(num_proc, num_thread, iters, nohup=False, resume=False, cluster=True):
 		submitfile.write(cmd + '\n')
 		submitfile.close()
 		return cmd
+
 	if not cluster:
+
+		if not os.path.isfile(os.path.join(_workpath, 'emc')):
+			print("\n EMC module is not compiled, exit.")
+			return
+
 		cmd = os.path.join(_workpath, 'emc') + ' -c ' + os.path.join(_workpath, 'config.ini') + ' -t ' +  str(num_thread)
 		if resume:
 			cmd = cmd + ' -r ' + str(iters)
