@@ -19,7 +19,7 @@ if __name__=="__main__":
 					'parameters|stoprad' : 40, 'parameters|polarization' : 'x', \
 					'emc|num_div' : 10, 'emc|need_scaling' : 1, \
 					'emc|beta' : 0.006, 'emc|beta_schedule' : '1.414 10' }
-	config_optional = {'parameters|ewald_rad' : '650.', 'make_detector|in_mask_file' : 'sample_mask.byt', \
+	config_optional = {'parameters|ewald_rad' : '650.', 'make_detector|in_mask_file' : 'sample_mask_sm.byt', \
 					'emc|sym_icosahedral' : 0, 'emc|selection' : 'None', \
 					'emc|start_model_file' : 'None'}
 	params = dict(config_essential, **config_optional)
