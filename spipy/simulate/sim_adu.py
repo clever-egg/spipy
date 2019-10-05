@@ -265,9 +265,10 @@ class simulation():
 			pat = pat.reshape((det_l, det_l))
 			pat = np.abs(pat)**2
 			# evaluate adu and add noise
-			adu = float(self.config_param['make_data|fluence'] * 12398.419 / det_lambda / 1e12)
+			photons = float(self.config_param['make_data|fluence'] / 1e10)
+			adu = photons * 12398.419 / det_lambda / 1e2
 			if poisson:
-				patt[ind] = np.random.poisson( pat * adu/np.sum(pat) ).astype(float)
+				patt[ind] = np.random.poisson( pat * photons/np.sum(pat) ).astype(float)
 			else:
 				patt[ind] = pat * adu/np.sum(pat)
 			del pat
