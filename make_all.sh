@@ -123,6 +123,11 @@ g++ sptree.cpp tsne.cpp tsne_main.cpp -o bh_tsne -O2
 if [ $? -ne 0 ];then echo $?; exit 1;fi
 chmod u+x bh_tsne
 
+echo "==> Compile image/qlist_dir"
+cd $root_folder/image/qlist_dir
+g++ gen_quat.cpp -o gen_quat -O1
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+chmod u+x gen_quat
 
 if [ $SKIP_COMPILE -eq 0 ]; then
 
