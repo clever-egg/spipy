@@ -1,11 +1,11 @@
 __all__ = ['q', 'saxs', 'orientation', 'SH_expan', 'criterion', 'rotate']
 
-import q
-import saxs
-import orientation
-import SH_expan
-import criterion
-import rotate
+from . import q
+from . import saxs
+from . import orientation
+from . import SH_expan
+from . import criterion
+from . import rotate
 
 def help(module = None):
 	import os

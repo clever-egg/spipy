@@ -15,7 +15,7 @@ size = comm.Get_size()
 
 def config_iters_to_alg_num(string):
     # split a string like '100ERA 200DM 50ERA' with the numbers
-    steps = re.split('(\d+)', string)   # ['', '100', 'ERA ', '200', 'DM ', '50', 'ERA']
+    steps = re.split(r'(\d+)', string)   # ['', '100', 'ERA ', '200', 'DM ', '50', 'ERA']
     
     # get rid of empty strings
     steps = [s for s in steps if len(s)>0] # ['100', 'ERA ', '200', 'DM ', '50', 'ERA']
@@ -34,74 +34,63 @@ def out_merge(out, I, good_pix):
     
     # centre, flip and average the retrievals
     O, PRTF    = utils.merge.merge_sols(np.array([i['O'] for i in out]), True)
-    support, t = utils.merge.merge_sols(np.array([i['support'] for i in out]).astype(np.float), True)
+    support, _ = utils.merge.merge_sols(np.array([i['support'] for i in out]).astype(np.float), True)
        
     eMod    = np.array([i['eMod'] for i in out])
     eCon    = np.array([i['eCon'] for i in out])
 
     # mpi
-    O          = comm.gather(O, root=0)
-    support    = comm.gather(support, root=0)
-    eMod       = comm.gather(eMod, root=0)
-    eCon       = comm.gather(eCon, root=0)
-    PRTF       = comm.gather(PRTF, root=0)
-    if background is not 0 :
-        background = comm.gather(background, root=0)
-    
-    if rank == 0 :
-        PRTF       = np.abs(np.mean(np.array(PRTF), axis=0))
-
-        eMod       = np.array(eMod).reshape((size*eMod[0].shape[0], eMod[0].shape[1]))
-        eCon       = np.array(eCon).reshape((size*eCon[0].shape[0], eCon[0].shape[1]))
-        O, t       = utils.merge.merge_sols(np.array(O))
-        support, t = utils.merge.merge_sols(np.array(support), True)
+    if rank == 0:
+        Os       = np.empty([size]+list(O.shape), dtype=O.dtype)
+        supports = np.empty([size]+list(support.shape), dtype=support.dtype)
+        eMods    = np.empty([size]+list(eMod.shape), dtype=eMod.dtype)
+        eCons    = np.empty([size]+list(eCon.shape), dtype=eCon.dtype)
+        PRTFs    = np.empty([size]+list(PRTF.shape), dtype=PRTF.dtype)
         if background is not 0 :
-            background = np.mean(np.array(background), axis=0)
-    
+            backgrounds = np.empty([size]+list(background.shape), dtype=background.dtype)
+    else:
+        Os       = None
+        supports = None
+        eMods    = None
+        eCons    = None
+        PRTFs    = None
+        backgrounds = None
+
+    comm.Gather(O, Os, root=0)
+    comm.Gather(support, supports, root=0)
+    comm.Gather(eMod, eMods, root=0)
+    comm.Gather(eCon, eCons, root=0)
+    comm.Gather(PRTF, PRTFs, root=0)
+    if background is not 0 :
+        comm.Gather(background, backgrounds, root=0)
+
+    if rank == 0 :
+        PRTFs       = np.abs(np.mean(np.array(PRTFs), axis=0))
+        eMods       = np.array(eMods).reshape((size*eMods[0].shape[0], eMods[0].shape[1]))
+        eCons       = np.array(eCons).reshape((size*eCons[0].shape[0], eCons[0].shape[1]))
+        Os, _       = utils.merge.merge_sols(np.array(Os))
+        supports, _ = utils.merge.merge_sols(np.array(supports), True)
+        if background is not 0 :
+            backgrounds = np.mean(np.array(backgrounds), axis=0)
+
     if rank == 0:
         # get the PSD
-        PSD, PSD_I, PSD_phase = utils.merge.PSD(O, I)
+        PSD, PSD_I, PSD_phase = utils.merge.PSD(Os, I)
 
         out_m = out[0]
-        out_m['I'] = np.abs(np.fft.fftn(O))**2
-        out_m['O'] = O
-        out_m['background'] = background
+        out_m['I'] = np.abs(np.fft.fftn(Os))**2
+        out_m['O'] = Os
+        out_m['background'] = backgrounds
         out_m['PSD']      = PSD
         out_m['PSD_I']    = PSD_I
-        out_m['PRTF']     = PRTF
+        out_m['PRTF']     = PRTFs
         out_m['PRTF_rav'] = np.array([0]) #PRTF_rav
-        out_m['eMod']     = eMod
-        out_m['eCon']     = eCon
-        out_m['support']  = support
-    	return out_m
+        out_m['eMod']     = eMods
+        out_m['eCon']     = eCons
+        out_m['support']  = supports
+        return out_m
     else:
     	return None
-    
-def phase_onetime(I, params0, alg_iters, d):
-    out = copy.deepcopy(d)
-    params = copy.deepcopy(params0)
-        
-    for alg, iters in alg_iters :
-            
-        if alg == 'ERA':
-            O, info = phasing3d.ERA(I, iters, **params['phasing_parameters'])
-             
-        if alg == 'DM':
-            O, info = phasing3d.DM(I,  iters, **params['phasing_parameters'])
-
-        if alg == 'RAAR':
-            O, info = phasing3d.RAAR(I,  iters, **params['phasing_parameters'])
-             
-        out['O']           = params['phasing_parameters']['O']          = O
-        out['eMod']       += info['eMod']
-        out['eCon']       += info['eCon']
-            
-        if 'background' in info.keys():
-            out['background']  = params['phasing_parameters']['background'] = info['background'] * good_pix
-            out['B_rav']       = info['r_av']
-    
-    out['support']     = params['phasing_parameters']['support']    = info['support']
-    return out
 
 def phase(I, support, params, good_pix = None, sample_known = None):
     d   = {'eMod' : [],         \
@@ -127,15 +116,6 @@ def phase(I, support, params, good_pix = None, sample_known = None):
     alg_iters = config_iters_to_alg_num(params['phasing']['iters'])
         
     # Repeats
-    """
-    pool = mp.Pool(processes = num_processor)
-    result = []
-    for j in range(params['phasing']['repeats']):
-        result.append(pool.apply_async(phase_onetime, args=(I,params0,alg_iters,d,)))
-    pool.close()
-    pool.join()
-    out = [p.get() for p in result]
-    """
     #---------------------------------------------
     for j in range(params['phasing']['repeats']):
         out.append(copy.deepcopy(d))

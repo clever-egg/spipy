@@ -1,4 +1,8 @@
 import numpy as np
+from scipy.special import sph_harm
+import sys
+from ..image import radp
+from . import orientation
 
 def help(module):
 	if module=="sp_hamonics":
@@ -14,16 +18,6 @@ def help(module):
 
 class _sphere_des():
 	# spherical polym descriptor
-	from scipy.special import sph_harm
-	import sys
-	import os
-	import h5py
-	import scipy
-	sys.path.append(__file__.split('/analyse/SH_expan.py')[0] + '/image')
-	import q
-	import radp
-	import orientation
-	import numpy as np
 
 	def __init__(self):
 		self.data = None
@@ -32,7 +26,6 @@ class _sphere_des():
 		self.L = None
 		self.rmax = None
 		self.r = None
-		self.qinfo = None
 		self.dsize = None
 		self.Clm = None
 		self.Cl = None
@@ -55,32 +48,32 @@ class _sphere_des():
 		self.rmax = min(self.dsize) - max(self.data_center)
 	
 	def _cal_one_point(self, pointx, pointy, pointz, m, l):
-		theta,phi = self.orientation._xyz2ang([pointx, pointy, pointz], self.data_center)
-		sh = self.sph_harm(m,l,theta,phi)
+		theta,phi = orientation._xyz2ang([pointx, pointy, pointz], self.data_center)
+		sh = sph_harm(m,l,theta,phi)
 		return sh.conjugate()
 
 	def compute(self, L, r):
 		self.L = L
 		self.r = r
-		cal = self.np.frompyfunc(self._cal_one_point, 5, 1)
+		cal = np.frompyfunc(self._cal_one_point, 5, 1)
 		# compute shells [shell1,shell2,...], shell1=np.array([[x1,y1],[x2,y2],...])
-		shell = self.radp.shells_3d([self.r], self.dsize, self.data_center)[0]
+		shell = radp.shells([self.r], self.dsize, self.data_center)[0]
 		# compute sh
 		print("\nCalculating spherical hamonics expansion ...")
-		self.Clm = self.np.zeros((self.L, self.L*2+1), dtype=self.np.complex)
-		sh_conj = self.np.zeros((self.L, self.L*2+1, len(shell)),dtype=self.np.complex)
-		for l in self.np.arange(self.L):
-			for m in self.np.arange(-l,l+1,1):
+		self.Clm = np.zeros((self.L, self.L*2+1), dtype=np.complex)
+		sh_conj = np.zeros((self.L, self.L*2+1, len(shell)),dtype=np.complex)
+		for l in np.arange(self.L):
+			for m in np.arange(-l,l+1,1):
 				sh = cal(shell[:,0], shell[:,1], shell[:,2], [m]*len(shell), [l]*len(shell))
 				sh_conj[l,m,:] = sh
-				self.sys.stdout.write("Processing... " + "l=" + str(l) + ", m=" + str(m)\
+				sys.stdout.write("Processing... " + "l=" + str(l) + ", m=" + str(m)\
 				+ ", r=" + str(r) + " \r")
-				self.sys.stdout.flush()
+				sys.stdout.flush()
 		# compute sh des
-		delta_omiga = 4*self.np.pi/len(shell)
+		delta_omiga = 4*np.pi/len(shell)
 		sdata = self.data[shell[:,0], shell[:,1], shell[:,2]]
-		self.Clm = self.np.sum(sdata*sh_conj*delta_omiga, axis=2)
-		self.Cl = self.np.linalg.norm(self.Clm, axis=1)
+		self.Clm = np.sum(sdata*sh_conj*delta_omiga, axis=2)
+		self.Cl = np.linalg.norm(self.Clm, axis=1)
 		print("\ndone.\n")
 		return self.Cl
 

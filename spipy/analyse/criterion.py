@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from spipy.image import radp
+from ..image import radp
 
 def help(module):
 	if module=="r_factor":
@@ -38,10 +38,10 @@ def help(module):
 		print("    -> Output: pearsoncc ( numpy array, dimension = N-1)")
 	elif module=="PRTF":
 		print("Calculate phase retrieval transfer function of phased dataset (support 2D or 3D data)")
-		print("    -> Input: phased_reciprocal ( the reciprocal dataset after independent phasing, dtype=numpy.complex128, shape=(N,Npx,Npy) or (N,Npx,Npy,Npz)")
+		print("    -> Input: phased_reciprocal ( the reciprocal volums after N independent phasing, dtype=numpy.complex128, shape=(N,Npx,Npy) or (N,Npx,Npy,Npz)")
 		print("              center ( the center of phased dataset (zero frequency) )")
 		print("     *option: mask ( dataset mask, shape=(Npx,Npy) or (Npx,Npy,Npz), a 0/1 pattern/volume, 1 is masked area )")
-		print("    -> Output: radial profile of PRTF, shape=(Np,)")
+		print("    -> Output: [r_pixel, PRTF, std-error]")
 	else:
 		raise ValueError("No module names "+str(module))
 
@@ -55,7 +55,7 @@ def r_factor_shell(F_cal, F_obs, rlist):
 		raise RuntimeError("F1 and F2 should be in the same size!")
 	size = np.array(F_cal.shape)
 	center = (size-1)/2.0
-	shells = radp.shells_3d(rlist, size, center)
+	shells = radp.shells(rlist, size, center)
 	Rf = np.zeros(len(rlist))
 	for ind,shell in enumerate(shells):
 		shell_f_cal = F_cal[shell[:,0],shell[:,1],shell[:,2]] + 1e-15
@@ -68,7 +68,7 @@ def fsc(F1, F2, rlist):
 		raise RuntimeError("F1 and F2 should be in the same size!")
 	size = np.array(F1.shape)
 	center = (size-1)/2.0
-	shells = radp.shells_3d(rlist, size, center)
+	shells = radp.shells(rlist, size, center)
 	FSC = np.zeros(len(rlist))
 	for ind,shell in enumerate(shells):
 		shell_f1 = F1[shell[:,0],shell[:,1],shell[:,2]] + 1e-15
@@ -83,7 +83,7 @@ def r_split(F1, F2, rlist):
 		raise RuntimeError("F1 and F2 should be in the same size!")
 	size = np.array(F1.shape)
 	center = (size-1)/2.0
-	shells = radp.shells_3d(rlist, size, center)
+	shells = radp.shells(rlist, size, center)
 	rs = np.zeros(len(rlist))
 	for ind,shell in enumerate(shells):
 		shell_f1 = F1[shell[:,0],shell[:,1],shell[:,2]] + 1e-15
@@ -108,12 +108,12 @@ def Pearson_cc(exp_d, ref_d, axis=-1):
 def PRTF(phased_reciprocal, center, mask=None):
 	if mask is not None and mask.shape != phased_reciprocal.shape[1:]:
 		raise RuntimeError("mask shape is not compatible with input reciprocal data")
-	phase = np.zeros(phased_reciprocal.shape,dtype=np.complex128)
-	zero_index = np.where(np.abs(phased_reciprocal)!=0)
-	phase[zero_index] = np.array(phased_reciprocal[zero_index])/np.abs(phased_reciprocal[zero_index])
-	PRTF = np.abs(phase.mean(axis=0))
+	angle = np.angle(phased_reciprocal)
+	PRTF = np.abs(np.mean(np.exp(1.0J * angle), axis=0))
 	if len(phased_reciprocal.shape) == 3:
-		PRTF_rav = radp.radial_profile_2d(PRTF, center, mask)
+		PRTF_rav = radp.radial_profile(PRTF, center, mask)
 	elif len(phased_reciprocal.shape) == 4:
-		PRTF_rav = radp.radial_profile_3d(PRTF, center, mask)
+		PRTF_rav = radp.radial_profile(PRTF, center, mask)
+	else:
+		raise RuntimeError("Given reciprocal volume is invalid, require 3d or 4d input.")
 	return PRTF_rav

@@ -1,7 +1,7 @@
 __all__ = ['sim', 'sim_adu']
 
-import sim
-import sim_adu
+from . import sim
+from . import sim_adu
 
 def help(module = None):
 	import os

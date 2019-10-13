@@ -1,7 +1,7 @@
 __all__ = ['phase3d', 'phase2d']
 
-import phase3d
-import phase2d
+from . import phase3d
+from . import phase2d
 
 def help(module = None):
 	import os

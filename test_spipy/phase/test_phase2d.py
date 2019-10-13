@@ -8,7 +8,7 @@ if __name__=="__main__":
 		'input|outer_outer_mask' : None, 'input|mask_edges' : True, \
 		'phasing|repeats' : 1, 'phasing|iters' : '200RAAR 200DM 200ERA', \
 		'phasing_parameters|support_size' : 100, 'phasing_parameters|beta' : 0.8}
-	params_optional = {'input|subtract_percentile' : None, 'input|spherical_support' : None, \
+	params_optional = {'input|subtract_percentile' : None, 'input|spherical_support' : 20, \
 		'phasing_parameters|background' : 'True', 'input|init_model' : None}
 
 	print("\nCreate new project ...")
@@ -16,10 +16,10 @@ if __name__=="__main__":
 
 	print("\nConfiguring ...")
 	parameters = dict(params_essential, **params_optional)
-	phase2d.config(params = parameters)
+	phase2d.config_project(params = parameters)
 
-	print("\nStart ! Run in background ! Check log file for details!")
-	phase2d.run(num_proc=3, nohup=False, cluster=False)
+	print("\nStart !")
+	phase2d.run_project(num_proc=2, nohup=False, cluster=True)
 
 	print("\nRun ' python show_result.py output.h5 ' at the project dir to see results.\n")
 	sys.exit(0)

@@ -1,6 +1,6 @@
 import numpy as np
 import time
-import ConfigParser
+import configparser
 import argparse
 import os
 import sys
@@ -76,7 +76,7 @@ def read_density(in_den_file, binary=True):
             den     = np.array(den)
         sz      = len(den)
         l       = int(np.round(np.power(sz, 1./2.)))
-        out_den = den.reshape(l,l,l)
+        out_den = den.reshape([l,l,l])
     return out_den
 
 def check_to_overwrite(fn):
@@ -85,14 +85,14 @@ def check_to_overwrite(fn):
     no  = set(['no', 'n', 'nope', 'nay', 'not'])
     if os.path.isfile(fn):
         sys.stdout.write("%s is present. Overwrite? [Y or Return/N]: " % fn)
-        choice = raw_input().lower()
+        choice = input().lower()
         if choice in yes:
             overwrite = True
-            print "Overwriting " + fn
+            print("Overwriting", fn)
             logging.info("Overwriting " + fn)
         elif choice in no:
             overwrite = False
-            print "Not overwriting " + fn
+            print("Not overwriting", fn)
             logging.info("Not overwriting " + fn)
         else:
             sys.stdout.write("Please respond with 'yes' or 'no'")
@@ -104,11 +104,10 @@ def confirm_oversampling(ratio):
     done = False
     yes = set(['yes', 'y', '', 'yup', 'ya'])
     no  = set(['no', 'n', 'nope', 'nay', 'not'])
-    print 'Oversampling ratio = %.2f is a little high. This is inefficient.' % ratio
-    print 'Please see http://www.github.com/duaneloh/Dragonfly/wiki/Oversampling for tips'
+    print('Oversampling ratio = %.2f is a little high. This is inefficient.' % ratio)
     sys.stdout.write('Continue anyway? [Y or Return/N]: ')
     while not done:
-        choice = raw_input().lower()
+        choice = input().lower()
         if choice in yes:
             proceed = True
             done = True
@@ -144,14 +143,14 @@ def create_new_recon_dir(tag="recon", num=1, prefix="./"):
     return recon_dir
 
 def use_last_recon_as_starting_model(config_fname, output_subdir="output"):
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read(config_fname)
 
     emc_data_dir = os.path.join(config.get("emc", "out_folder"), output_subdir)
     recon_out_files = glob(os.path.join(emc_data_dir, "intens*.bin"))
     (max_tag, max_file) = (0, "")
     for f in recon_out_files:
-        t = int(re.search("intens_(\d+).bin", f).group(1))
+        t = int(re.search(r"intens_(\d+).bin", f).group(1))
         if t > max_tag:
             max_tag = t
             max_file = f
@@ -161,7 +160,7 @@ def use_last_recon_as_starting_model(config_fname, output_subdir="output"):
         config.write(fp)
 
 def increment_quat_file_sensibly(config_fname, incr):
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read(config_fname)
 
     quat_num_div = int(config.get("emc", "num_div"))

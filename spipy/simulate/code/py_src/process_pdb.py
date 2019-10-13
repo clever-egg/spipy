@@ -8,13 +8,16 @@ from scipy.interpolate import interp1d
 import urllib
 
 def fetch_pdb(pdb_code):
-    print pdb_code
+    print(pdb_code)
     if os.path.isfile('aux/%s.pdb' % (pdb_code)):
         pass
     else:
+        raise RuntimeError("PDB %s is not found !" % pdb_code)
+        '''
         pdb_string = urllib.urlopen('http://www.rcsb.org/pdb/files/%s.pdb' % pdb_code.upper())
         with open('aux/%s.pdb' % pdb_code.upper()) as f:
             f.write(pdb_string)
+        '''
 
 def find_atom_types(pdb_file):
     atoms = []
@@ -115,7 +118,7 @@ def apply_symmetry(atoms, sym_list, trans_list):
     msg = "Mass of particle (MDa), %.3f"%(total_ms)
     logging.info(msg)
     out_atoms = np.zeros((len(sym_list),)+atoms.shape)
-    for i in xrange(len(sym_list)):
+    for i in range(len(sym_list)):
         sym_op = sym_list[i]
         trans = trans_list[i]
         vecs = sym_op.dot(org_atoms).T + trans

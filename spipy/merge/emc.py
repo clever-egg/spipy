@@ -1,6 +1,9 @@
 import os
 import sys
 import numpy as np
+import configparser
+import subprocess
+import h5py
 
 _workpath = None
 config_essential = {'parameters|detd' : 200, 'parameters|lambda' : 2.5, \
@@ -74,8 +77,6 @@ def use_project(project_path):
 
 def new_project(data_path, inh5, path=None, name=None):
 	global _workpath
-	import subprocess
-	import h5py
 
 	code_path = __file__.split('/emc.py')[0] + '/template_emc'
 	if not os.path.exists(data_path):
@@ -112,8 +113,7 @@ def new_project(data_path, inh5, path=None, name=None):
 	cmd = code_path + '/new_project ' + _workpath
 	subprocess.check_call(cmd, shell=True)
 	# now change output|path in config.ini
-	import ConfigParser
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	config.read(os.path.join(_workpath, 'config.ini'))
 	config.set('make_detector', 'out_detector_file', os.path.join(_workpath, 'data/det_exp.dat'))
 	config.set('make_data', 'out_photons_file', os.path.join(_workpath, 'data/photons.emc'))
@@ -134,8 +134,6 @@ def new_project(data_path, inh5, path=None, name=None):
 
 def config(params):
 	global _workpath
-	import ConfigParser
-	import subprocess
 
 	if not os.path.exists(os.path.join(_workpath,'config.ini')):
 		raise RuntimeError("I can't find your configure file, please run emc.new_project(...) first !")
@@ -161,11 +159,11 @@ def config(params):
 			else:
 				raise RuntimeError("I only support .byt, .bin or .npy format !")
 			params['make_detector|in_mask_file'] = os.path.join(_workpath, "mask.byt")
-		config = ConfigParser.ConfigParser()
+		config = configparser.ConfigParser()
 		config.read(os.path.join(_workpath,'config.ini'))
 		for k in params.keys():
 			section, par = k.split("|")
-			config.set(section, par, params[k])
+			config.set(section, par, str(params[k]))
 		with open(os.path.join(_workpath,'config.ini'), 'w') as f:
 			config.write(f)
 	# write data/detector.dat
@@ -176,7 +174,6 @@ def config(params):
 
 def run(num_proc, num_thread, iters, nohup=False, resume=False, cluster=True):
 	global _workpath
-	import subprocess
 
 	num_proc = int(num_proc)
 	if num_thread is None or iters is None:
@@ -191,7 +188,7 @@ def run(num_proc, num_thread, iters, nohup=False, resume=False, cluster=True):
 	code_path = __file__.split('/emc.py')[0] + '/template_emc'
 
 	if cluster:
-		import spipy.info as info
+		from .. import info
 
 		try:
 			mpirun = info.EMC_MPI

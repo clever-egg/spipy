@@ -1,4 +1,6 @@
 #! /bin/bash
+set -e
+
 sys=`uname`
 nowpath=`dirname $0`
 if [ $sys = "Linux" ]

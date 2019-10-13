@@ -5,6 +5,7 @@ import matplotlib.image as mimage
 from spipy.image import preprocess
 import copy
 import sys
+import os
 
 if __name__ == "__main__":
 	data = np.load("test_adu.npy")
@@ -42,20 +43,24 @@ if __name__ == "__main__":
 
 
 	print("\n(4) test preprocess.fix_artifact_auto")
-	pl = mimage.imread('fix_art_auto.png')
-	plt.imshow(pl)
-	plt.show()
-	sys.exit(0)
 
-	#test_adu.npy")
-	data = np.load("Your-data-path")
-	ref = copy.deepcopy(data)
-	newdata = preprocess.fix_artifact_auto(dataset=data, estimated_center=np.array(data[0].shape)/2, njobs=1, mask=mask, vol_of_bins=50)
-	for watch in np.random.choice(data.shape[0],10,replace=False):
-		plt.subplot(1,2,1)
-		plt.imshow(np.log(1+np.abs(ref[watch])))
-		plt.title('Before fix')
-		plt.subplot(1,2,2)
-		plt.imshow(np.log(1+np.abs(newdata[watch])))
-		plt.title('After fix')
+	if not os.path.isfile("../../../PR_single.h5"):
+
+		pl = mimage.imread('fix_art_auto.png')
+		plt.imshow(pl)
 		plt.show()
+		sys.exit(0)
+
+	else:
+		#test_adu.npy")
+		data = h5py.File("../../../PR_single.h5", 'r')['adu'][()]
+		ref = copy.deepcopy(data)
+		newdata = preprocess.fix_artifact_auto(dataset=data, estimated_center=np.array(data[0].shape)/2, njobs=2, mask=mask, vol_of_bins=100)
+		for watch in np.random.choice(data.shape[0],10,replace=False):
+			plt.subplot(1,2,1)
+			plt.imshow(np.log(1+np.abs(ref[watch])))
+			plt.title('Before fix')
+			plt.subplot(1,2,2)
+			plt.imshow(np.log(1+np.abs(newdata[watch])))
+			plt.title('After fix')
+			plt.show()

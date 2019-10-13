@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import os
 import matplotlib.pyplot as plt
-import Tkinter as Tk
+import tkinter as Tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Frameviewer():
@@ -49,7 +49,7 @@ class Frameviewer():
         self.fig = plt.figure(figsize=(6, 6))
         #self.fig.subplots_adjust(left=0.0, bottom=0.00, right=0.99, wspace=0.0)
         self.canvas = FigureCanvasTkAgg(self.fig, fig_frame)
-        self.canvas.show()
+        self.canvas.draw()
         self.canvas.get_tk_widget().pack(fill='both', expand=1)
         
         self.options = Tk.Frame(self.master, relief=Tk.GROOVE, borderwidth=5, width=400, height=200)
@@ -181,7 +181,7 @@ class Frameviewer():
         else:
             s.set_title("%d photons (bad frame)" % frame.sum())
         self.fig.add_subplot(s)
-        self.canvas.show()
+        self.canvas.draw()
 
     def next_bad_frame(self, event=None):
         cur_num = int(self.numstr.get())
@@ -214,7 +214,7 @@ class Frameviewer():
 if __name__ == '__main__':
     import spipy
     sys.path.append(os.path.join(os.path.dirname(spipy.merge.emc.__file__), 'template_emc/'))
-    import ConfigParser
+    import configparser
     from py_src import py_utils
     from py_src import read_config
 
@@ -225,11 +225,11 @@ if __name__ == '__main__':
     
     try:
         pfile = read_config.get_filename(args.config_file, 'emc', 'in_photons_file')
-        print 'Using in_photons_file: %s' % pfile
+        print('Using in_photons_file: %s' % pfile)
         photons_list = [pfile]
-    except ConfigParser.NoOptionError:
+    except configarser.NoOptionError:
         plist = read_config.get_filename(args.config_file, 'emc', 'in_photons_list')
-        print 'Using in_photons_list: %s' % plist
+        print('Using in_photons_list: %s' % plist)
         with open(plist, 'r') as f:
             photons_list = map(lambda x: x.rstrip(), f.readlines())
     
@@ -238,7 +238,7 @@ if __name__ == '__main__':
     
     try:
         blist_fname = read_config.get_filename(args.config_file, 'emc', 'blacklist_file')
-    except ConfigParser.NoOptionError:
+    except configparser.NoOptionError:
         blist_fname = None
     
     root = Tk.Tk()

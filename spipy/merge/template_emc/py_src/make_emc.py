@@ -12,15 +12,6 @@ if __name__ == '__main__':
 	path = sys.argv[2]
 	savepath = sys.argv[3]
 
-	"""
-	########### IMPORTANT ###########
-	image_size = (260,257)                   # input pattern shape
-	num_data = 'all'                          # input pattern number
-	readfile = './taubin46.h5'                  # input h5 file
-	mask_file = ''
-	if_preprocess = 0
-	########### IMPORTANT ###########
-	"""
 	# Read the original exp data file
 	expfile = h5py.File(readfile,'r')
 	exp = expfile[path][...]

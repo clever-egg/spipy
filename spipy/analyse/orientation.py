@@ -90,7 +90,7 @@ def proc_Hammer(qlist, data):
 		raise ValueError("Check your input qlist please. Exit")
 	import sys
 	sys.path.append(__file__.split('/analyse/orientation.py')[0] + '/image/')
-	import quat
+	from ..image import quat
 	n0 = np.matrix([[1],[0],[0]])
 	hammer = []
 	n = []
@@ -185,7 +185,7 @@ def Sphere_randp(algo, radius, num):
 			def toCartesian(self):
 				r = np.sin(self.azimuthal) * self.radial
 				x = np.cos(self.polar) * r
-		 		y = np.sin(self.polar) * r
+				y = np.sin(self.polar) * r
 				z = np.cos(self.azimuthal) * self.radial
 				return x, y, z
 

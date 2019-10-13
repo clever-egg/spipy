@@ -4,7 +4,7 @@ import os
 import subprocess
 import argparse
 import logging
-import ConfigParser
+import configparser
 import sys
 
 work_dir = None
@@ -66,7 +66,7 @@ def generate_config_files(pdb_file, workpath = None, name=None, params = {}):
         work_dir = os.path.join(workpath, 'simulate_' + format(nid, '02d'))
     if os.path.exists(work_dir):
         print("Project "+work_dir+" has already existed, overwrite? [y/n]")
-        resp = raw_input()
+        resp = input()
         if resp=='y':
             os.system("rm -r "+work_dir)
             os.mkdir(work_dir)
@@ -76,12 +76,12 @@ def generate_config_files(pdb_file, workpath = None, name=None, params = {}):
         os.mkdir(work_dir)
     # copy config.ini to work dir
     path = __file__.split('/sim.py')[0] + '/config.ini'
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read(path)
     if params!={}:
         for key in params.keys():
             section, par = key.split('|')
-            config.set(section, par, params[key])
+            config.set(section, par, str(params[key]))
     else:
         print("\n Generate default config file.")
     config.set("make_densities","pdb_code", pdb_file.split('/')[-1].split('.')[0])
@@ -114,7 +114,7 @@ def run_simulation(skip_check = False):
         return   
     os.chdir(work_dir)
 
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read(os.path.join(work_dir,"config.ini"))
     pat_num = config.get("make_data","num_data")
     save_pdb = os.path.join(work_dir,'data/') + config.get("make_densities","pdb_code")
@@ -122,7 +122,7 @@ def run_simulation(skip_check = False):
     if skip_check:
         cmd = cmd + ' --skip_check'
     subprocess.check_call(cmd, shell=True)
-    cmd = 'python ' + os.path.join(work_dir,'py_src/read_emc.py') + ' ' + save_pdb + ' ' + pat_num
+    cmd = 'python ' + os.path.join(work_dir,'read_emc.py') + ' ' + save_pdb + ' ' + pat_num
     subprocess.check_call(cmd, shell=True)
     # delete tmp file
     cmd = 'rm -rf ' + os.path.join(work_dir,'data/densityMap.bin') + ' ' + os.path.join(work_dir,'data/det_sim.dat')\

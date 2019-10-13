@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-import ConfigParser
+import configparser
 from collections import OrderedDict
 
 class MultiOrderedDict(OrderedDict):
@@ -11,12 +11,12 @@ class MultiOrderedDict(OrderedDict):
             super(OrderedDict, self).__setitem__(key, value)
 
 def get_param(config_file, section, tag):
-    config      = ConfigParser.ConfigParser()
+    config      = configparser.ConfigParser()
     config.read(config_file)
     return config.get(section, tag)
 
 def get_multi_params(config_file, section, tag):
-    config      = ConfigParser.RawConfigParser(dict_type=MultiOrderedDict)
+    config      = configparser.RawConfigParser(dict_type=MultiOrderedDict)
     config.read(config_file)
     return config.get(section, tag)
 
@@ -28,7 +28,7 @@ def get_filename(config_file, section, tag):
     return param
 
 def get_detector_config(config_file, show=False):
-    config      = ConfigParser.ConfigParser()
+    config      = configparser.ConfigParser()
     config.read(config_file)
     params      = OrderedDict()
     params['wavelength']   = config.getfloat('parameters', 'lambda')
@@ -56,7 +56,7 @@ def get_detector_config(config_file, show=False):
         params['mask_fname'] = config.get('make_detector', 'in_mask_file')
         if params['mask_fname'] == 'None':
             params['mask_fname'] = None
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         params['mask_fname'] = None
 
     try:
@@ -67,7 +67,7 @@ def get_detector_config(config_file, show=False):
         else:
             params['detc_x'] = int(detcstr[0])
             params['detc_y'] = int(detcstr[1])
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         params['detc_x']   = (params['dets_x']-1)/2.
         params['detc_y']   = (params['dets_y']-1)/2.
     

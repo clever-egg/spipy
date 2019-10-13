@@ -1,10 +1,10 @@
 __all__ = ['radp', 'quat', 'classify', 'preprocess','io']
 
-import radp
-import quat
-import classify
-import preprocess
-import io
+from . import radp
+from . import quat
+from . import classify
+from . import preprocess
+from . import io
 
 def help(module = None):
 	import os

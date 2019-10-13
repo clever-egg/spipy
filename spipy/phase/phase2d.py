@@ -1,10 +1,10 @@
 import os
 import sys
 import numpy as np
-import ConfigParser
+import configparser
 import subprocess
 
-_workpath = None
+__workpath = None
 
 
 def help(module):
@@ -48,26 +48,26 @@ def help(module):
 
 
 def use_project(project_path):
-	global _workpath
+	global __workpath
 	
 	temp = None
 	if project_path[0] == '/' or project_path[0:2] == '~/':
 		temp = os.path.abspath(project_path)
 		if os.path.exists(temp):
-			_workpath = temp
+			__workpath = temp
 		else:
 			raise ValueError("The project " + temp + " doesn't exists. Exit")
 	else:
 		nowfolder = os.path.abspath(sys.path[0])
 		temp = os.path.join(nowfolder, project_path)
 		if os.path.exists(temp):
-			_workpath = os.path.abspath(temp)
+			__workpath = os.path.abspath(temp)
 		else:
 			raise ValueError("The project " + temp + " doesn't exists. Exit")
 
 
 def new_project(data_mask_path, path=None, name=None):
-	global _workpath
+	global __workpath
 
 	data_path = data_mask_path
 	code_path = __file__.split('/phase2d.py')[0]
@@ -83,7 +83,7 @@ def new_project(data_mask_path, path=None, name=None):
 		else:
 			path = os.path.abspath(path)
 	if name is not None:
-		_workpath = os.path.join(path, name)
+		__workpath = os.path.join(path, name)
 	else:
 		all_dirs = os.listdir(path)
 		nid = 0
@@ -91,92 +91,92 @@ def new_project(data_mask_path, path=None, name=None):
 			if di[0:8] == "phase2d_" and str.isdigit(di[8:]):
 				nid = max(nid, int(di[8:]))
 		nid += 1
-		_workpath = os.path.join(path, 'phase2d_' + format(nid, '02d'))
-	cmd = code_path + '/template_2d/new_project ' + _workpath
+		__workpath = os.path.join(path, 'phase2d_' + format(nid, '02d'))
+	cmd = code_path + '/template_2d/new_project ' + __workpath
 	subprocess.check_call(cmd, shell=True)
 	# now change output|path in config.ini
-	config = ConfigParser.ConfigParser()
-	config.read(os.path.join(_workpath, 'config.ini'))
-	config.set('output', 'path', _workpath)
-	config.set('input', 'fnam', os.path.join(_workpath,'data.bin'))
+	config = configparser.ConfigParser()
+	config.read(os.path.join(__workpath, 'config.ini'))
+	config.set('output', 'path', __workpath)
+	config.set('input', 'fnam', os.path.join(__workpath,'data.bin'))
 	# now load data
 	if data_path[0].split('.')[-1] == 'npy':
 		data = np.load(data_path[0])
-		data.tofile(_workpath+'/ori_intens/pattern.bin')
+		data.tofile(__workpath+'/ori_intens/pattern.bin')
 		config.set('input', 'dtype', str(data.dtype))
 	elif data_path[0].split('.')[-1] == 'bin':
-		cmd = 'cp ' + data_path[0] + ' ' + _workpath + '/ori_intens/pattern.bin'
+		cmd = 'cp ' + data_path[0] + ' ' + __workpath + '/ori_intens/pattern.bin'
 		subprocess.check_call(cmd, shell=True)
 	elif data_path[0].split('.')[-1] == 'mat':
 		import scipy.io as sio
 		dfile = sio.loadmat(data_path[0])
 		data = dfile.values()[0]
-		data.tofile(_workpath+'/ori_intens/pattern.bin')
+		data.tofile(__workpath+'/ori_intens/pattern.bin')
 		config.set('input', 'dtype', str(data.dtype))
 	else:
 		raise ValueError('\n Error while loading your data ! Exit\n')
 	# now make soft link
-	cmd = 'ln -fs ' + _workpath + '/ori_intens/pattern.bin ' + _workpath + '/data.bin'
+	cmd = 'ln -fs ' + __workpath + '/ori_intens/pattern.bin ' + __workpath + '/data.bin'
 	subprocess.check_call(cmd, shell=True)
 	# now load mask data
 	if data_path[1] is not None:
-		cmd = 'cp ' + data_path[1] + ' ' + _workpath + '/ori_intens/mask.npy'
+		cmd = 'cp ' + data_path[1] + ' ' + __workpath + '/ori_intens/mask.npy'
 		subprocess.check_call(cmd, shell=True)
-		cmd = 'ln -fs ' + _workpath + '/ori_intens/mask.npy ' + _workpath + '/mask.npy'
+		cmd = 'ln -fs ' + __workpath + '/ori_intens/mask.npy ' + __workpath + '/mask.npy'
 		subprocess.check_call(cmd, shell=True)
 	if data_path[1] is not None:
-		config.set('input', 'user_mask', os.path.join(_workpath,'mask.npy'))
+		config.set('input', 'user_mask', os.path.join(__workpath,'mask.npy'))
 	else:
 		config.set('input', 'user_mask', 'None')
 	# write config.ini
-	with open(os.path.join(_workpath, 'config.ini'), 'w') as f:
+	with open(os.path.join(__workpath, 'config.ini'), 'w') as f:
 		config.write(f)
 	# done
 	print("\nAll work done ! ")
 	print("Now please confirm running parameters. Your can re-edit it by calling function phase2d.config(...) or eidt config.ini directly.\n")
 
 
-def config(params):
-	global _workpath
-	if not os.path.exists(os.path.join(_workpath,'config.ini')):
+def config_project(params):
+	global __workpath
+	if not os.path.exists(os.path.join(__workpath,'config.ini')):
 		raise ValueError("I can't find your configure file, please run phase2d.new_project(...) first !")
 	
-	config = ConfigParser.ConfigParser()
-	config.read(os.path.join(_workpath,'config.ini'))
+	config = configparser.ConfigParser()
+	config.read(os.path.join(__workpath,'config.ini'))
 	for k in params.keys():
 		section, par = k.split("|")
-		config.set(section, par, params[k])
-	with open(os.path.join(_workpath,'config.ini'), 'w') as f:
+		config.set(section, par, str(params[k]))
+	with open(os.path.join(__workpath,'config.ini'), 'w') as f:
 		config.write(f)
+
+	code_path = __file__.split('/phase2d.py')[0] + '/template_2d'
+	cmd = "python " + os.path.join(code_path,'make_input.py') + ' '+ os.path.join(__workpath,'config.ini')
+	subprocess.check_call(cmd, shell=True)
+
 	print('\n Configure finished.')
 
 
-def run(num_proc=1, nohup=False, cluster=False):
-	global _workpath
+def run_project(num_proc=1, nohup=False, cluster=False):
+	global __workpath
 
-	if not os.path.exists(os.path.join(_workpath,'config.ini')):
+	if not os.path.exists(os.path.join(__workpath,'input.h5')):
 		raise ValueError("Please call phase2d.new_project(...) and phase2d.config(...) first ! Exit")
 
 	code_path = __file__.split('/phase2d.py')[0] + '/template_2d'
-	if nohup == True:
-		cmd = "python " + os.path.join(code_path,'make_input.py') + ' '+ os.path.join(_workpath,'config.ini') + ' >' + os.path.join(_workpath,'make_input.log')
-	else:
-		cmd = "python " + os.path.join(code_path,'make_input.py') + ' '+ os.path.join(_workpath,'config.ini')
-	subprocess.check_call(cmd, shell=True)
 
 	if num_proc >= 1:
 		# python path
-		pythony = subprocess.check_output('which python', shell=True).strip("\n")
+		pythony = subprocess.check_output('which python', shell=True).decode().strip("\n")
 		# mpirun path
 		mpirun = pythony.split('bin')[0]
 		mpirun = os.path.join(mpirun, 'bin/mpirun')
 		if nohup == True:
-			cmd = mpirun + " -n "+str(num_proc)+" %s " % pythony + os.path.join(code_path, 'phase.py') + ' ' + os.path.join(_workpath, 'input.h5') + ' &>' + os.path.join(_workpath, 'phase.log') + '&'
+			cmd = mpirun + " -n "+str(num_proc)+" %s " % pythony + os.path.join(code_path, 'phase.py') + ' ' + os.path.join(__workpath, 'input.h5') + ' &>' + os.path.join(__workpath, 'phase.log') + '&'
 		else:
-			cmd = mpirun + " -n "+str(num_proc)+" %s " % pythony + os.path.join(code_path, 'phase.py') + ' ' + os.path.join(_workpath, 'input.h5')
+			cmd = mpirun + " -n "+str(num_proc)+" %s " % pythony + os.path.join(code_path, 'phase.py') + ' ' + os.path.join(__workpath, 'input.h5')
 		if cluster:
 			print("\n Dry run on cluster, check submit_job.sh for details.\n")
-			submitfile = open(os.path.join(_workpath, "submit_job.sh"), 'w')
+			submitfile = open(os.path.join(__workpath, "submit_job.sh"), 'w')
 			submitfile.write("# Submit the command below to your job submitting system to run 3d phasing\n")
 			submitfile.write(cmd + '\n')
 			submitfile.close()
@@ -187,14 +187,14 @@ def run(num_proc=1, nohup=False, cluster=False):
 
 
 def show_result(outpath=None, exp_param=None):
-	global _workpath
+	global __workpath
 	if outpath is not None and type(outpath)!=str:
 		raise ValueError("Input 'outpath should be a string. Exit'")
 
 	code_path = __file__.split('/phase2d.py')[0] + '/template_2d'
 
 	if outpath is None:
-		cmd = "python " + os.path.join(code_path, 'show_result.py') + ' ' + os.path.join(_workpath, 'output.h5')
+		cmd = "python " + os.path.join(code_path, 'show_result.py') + ' ' + os.path.join(__workpath, 'output.h5')
 	else:
 		cmd = "python " + os.path.join(code_path, 'show_result.py') + ' ' + outpath
 	if exp_param is not None:

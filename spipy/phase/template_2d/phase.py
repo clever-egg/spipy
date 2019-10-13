@@ -14,7 +14,7 @@ size = comm.Get_size()
 
 def config_iters_to_alg_num(string):
     # split a string like '100ERA 200DM 50ERA' with the numbers
-    steps = re.split('(\d+)', string)   # ['', '100', 'ERA ', '200', 'DM ', '50', 'ERA']
+    steps = re.split(r'(\d+)', string)   # ['', '100', 'ERA ', '200', 'DM ', '50', 'ERA']
     
     # get rid of empty strings
     steps = [s for s in steps if len(s)>0] # ['100', 'ERA ', '200', 'DM ', '50', 'ERA']
@@ -35,13 +35,15 @@ def out_merge(out, I, good_pix):
     if rank == 0: silent = False
     
     # centre, flip and average the retrievals
-    O, PRTF    = utils.merge.merge_sols(np.array([i['O'] for i in out]), True)
-    support, t = utils.merge.merge_sols(np.array([i['support'] for i in out]).astype(np.float), True)
+    O, PRTF    = utils.merge_sols(np.array([i['O'] for i in out]), True)
+    support, t = utils.merge_sols(np.array([i['support'] for i in out]).astype(np.float), True)
        
     eMod    = np.array([i['eMod'] for i in out])
     eCon    = np.array([i['eCon'] for i in out])
 
     # mpi
+    comm.Barrier()
+    
     O          = comm.gather(O, root=0)
     support    = comm.gather(support, root=0)
     eMod       = comm.gather(eMod, root=0)
@@ -105,13 +107,6 @@ def phase(I, support, params, good_pix = None, sample_known = None):
     
     if params['phasing_parameters']['support'] is None :
         params['phasing_parameters']['support'] = support
-
-    if not params['phasing_parameters']['gaussian_blur'] is None :
-        blur_param = params['phasing_parameters']['gaussian_blur']
-        ksize = int(blur_param[0])
-        sigma = int(blur_param[1])
-        I = utils.fitting.gaussian_blur(I, ksize, sigma)
-        I[good_pix==0] = 0.0
 
     params0 = copy.deepcopy(params)
     

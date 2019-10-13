@@ -1,5 +1,6 @@
 #! /bin/bash
 root_folder=`pwd`/spipy
+set -e
 
 # get opts
 SKIP_COMPILE=0
@@ -31,8 +32,8 @@ else
 	echo "[Error] Use anaconda2/miniconda2 please. Exit."
 	exit 1
 fi
-py_version=`conda list | grep "python"`
-a='2.7'
+py_version=`conda list | grep "^python "`
+a='3.*.*'
 if [[ $py_version =~ $a ]]
 then
 	echo "==> Anaconda version authorized"
@@ -116,6 +117,7 @@ if [ $SKIP_COMPILE -eq 0 ]; then
 	fi
 fi
 
+
 # start compiling ...
 echo "==> Compile image/bhtsne_source"
 cd $root_folder/image/bhtsne_source
@@ -165,6 +167,18 @@ if [ $SKIP_COMPILE -eq 0 ]; then
 fi
 
 
+# extract test data
+echo "==> Extracting test data"
+cd $root_folder/../test_spipy
+tar -xzf test.tgz
+tar -xzf analyse/analyse.tgz -C ./analyse/
+tar -xzf image/image.tgz -C ./image/
+tar -xzf merge/merge.tgz -C ./merge/
+tar -xzf phase/phase.tgz -C ./phase/
+tar -xzf simulate/simulate.tgz -C ./simulate/
+
+
+# install python packages
 echo "==> Checking python packages"
 echo "[Warning] The coming procedure may install packages into your conda env. Continue ? (y/n)"
 read answer
@@ -231,19 +245,27 @@ cd $root_folder/image/qlist_dir
 chmod u+x ./gen_quat
 
 # make soft link
-if [ ! -d "${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy" ]
+python_path=`find ${Ana_path%/bin/python*}/lib -name "python3.*" -maxdepth 1`
+if [ ! -d ${python_path} ]
+then
+	echo "I can't find an unique python in your anaconda environment."
+	echo "ERR_PATH = ${python_path}"
+	exit 1
+fi
+
+if [ ! -d "${python_path}/site-packages/spipy" ]
 then
 	ln -fs $root_folder ${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy
 else
-	echo "[Warning] spipy is already in python2.7/site-packages. Over-write it? [y/n]"
+	echo "[Warning] spipy is already in python3.*/site-packages. Over-write it? [y/n]"
 	flag=0
 	while [ $flag = 0 ]
 	do
 		read overwrite
 		if [ $overwrite = "y" ]
 		then
-			rm ${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy
-			ln -fs $root_folder ${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy
+			rm ${python_path}/site-packages/spipy
+			ln -fs $root_folder ${python_path}/site-packages/spipy
 			flag=1
 		elif [ $overwrite = "n" ]
 		then
@@ -267,6 +289,6 @@ echo "VERSION = 3.0" >> $INFO
 if [ $SKIP_COMPILE -eq 0 ]; then
 	echo "EMC_MPI = '$mympirun'" >> $INFO
 fi
-
+cd $root_folder
 
 echo "==> Complete!"

@@ -39,8 +39,8 @@ def help(module):
 
 def writeccp4(volume, save_file):
 	save_path = os.path.dirname(save_file)
-	if not os.path.exists(save_path):
-		raise ValueError("Directory '" + save_path is "' invalid !")
+	if save_path != '' and not os.path.exists(save_path):
+		raise ValueError("Directory '" + save_path + "' is invalid !")
 	if not len(volume.shape)==3:
 		raise ValueError("Input volume should be 3D data !")
 
@@ -102,7 +102,7 @@ def readpdb_full(pdb_file):
 		else:
 			a_index = -1
 			a_mass = -1
-		if not pdb.has_key(res_index):
+		if res_index not in pdb.keys():
 			pdb[res_index] = [res_name, {}]
 		pdb[res_index][1][a_name]=[a_index, a_mass, x, y, z, occup, b_factor]
 	return pdb
@@ -127,7 +127,7 @@ def pdb2density(pdb_file, resolution):
 	ext_part = density[max(center[0]-R,0):min(center[0]+R,density.shape[0]),\
 						max(center[1]-R,0):min(center[1]+R,density.shape[1]),\
 						max(center[2]-R,0):min(center[2]+R,density.shape[2])]
-	ext_cen = (np.array(ext_part.shape)+1)/2
+	ext_cen = (np.array(ext_part.shape)+1)//2
 	box = np.zeros((2*R+1,2*R+1,2*R+1))
 	box[R-ext_cen[0]:R+ext_part.shape[0]-ext_cen[0],\
 		R-ext_cen[1]:R+ext_part.shape[1]-ext_cen[1],\

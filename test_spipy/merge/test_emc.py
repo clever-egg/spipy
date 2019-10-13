@@ -15,11 +15,11 @@ if __name__=="__main__":
 
 	print("\n(2) test emc.config ..")
 	config_essential = {'parameters|detd' : 581, 'parameters|lambda' : 7.9, \
-					'parameters|detsize' : '260 257', 'parameters|pixsize' : 0.3, \
-					'parameters|stoprad' : 40, 'parameters|polarization' : 'x', \
+					'parameters|detsize' : '128 128', 'parameters|pixsize' : 0.6, \
+					'parameters|stoprad' : 20, 'parameters|polarization' : 'x', \
 					'emc|num_div' : 10, 'emc|need_scaling' : 1, \
 					'emc|beta' : 0.006, 'emc|beta_schedule' : '1.414 10' }
-	config_optional = {'parameters|ewald_rad' : '650.', 'make_detector|in_mask_file' : 'sample_mask.byt', \
+	config_optional = {'parameters|ewald_rad' : '650.', 'make_detector|in_mask_file' : 'sample_mask_small.byt', \
 					'emc|sym_icosahedral' : 0, 'emc|selection' : 'None', \
 					'emc|start_model_file' : 'None'}
 	params = dict(config_essential, **config_optional)

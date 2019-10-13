@@ -1,6 +1,7 @@
 import numpy as np
 import os
-from spipy.analyse import rotate
+import json
+from ..analyse import rotate
 from scipy.linalg import get_blas_funcs
 import numexpr as ne
 from mpi4py import MPI
@@ -42,7 +43,7 @@ class simulation():
                     'parameters|stoprad' : 0, 'parameters|polarization' : 'x', \
                     'make_data|num_data' : 100, 'make_data|fluence' : 1.5e14, \
                     'make_data|scatter_factor' : False, 'make_data|ram_first' : True, \
-                    'make_data|poisson' : False}
+                    'make_data|photons' : False, 'make_data|projection' : True}
     euler = None  # alpha 0,2pi ; beta 0,pi ; gamma 0,2pi  shape=(Ne,3) [intrisinc]
     order = None  # rotation order 'zxz','zyz',...
     atoms = {'coordinate':None, 'index':None} # (angstrom) coordinate.shape=(Na,3)
@@ -51,10 +52,10 @@ class simulation():
     # self.k0 , self.screen_x
 
     def configure(self, pdb_file, param):
-        from spipy.analyse import q
-        from spipy.image import io
+        from ..analyse import q
+        from ..image import io
         # read parameters
-        for key, value in param.iteritems():
+        for key, value in param.items():
             if key in self.config_param.keys():
                 if type(value)==type(self.config_param[key]):
                     self.config_param[key] = value
@@ -140,14 +141,14 @@ class simulation():
     def generate_box(self, den_map):
         if den_map is None:
             pass
-        elif len(self.den_map.shape)==3:
-            center = (np.array(den_map.shape)+1)/2
+        elif len(den_map.shape)==3:
+            center = (np.array(den_map.shape)+1)//2
             box_size = (np.array(den_map.shape)*self.oversampl).astype(int)
             box = np.zeros(box_size)
-            box_cen = (np.array(box.shape)+1)/2
-            box[box_cen[0]-center[0]:box_cen[0]+density_map.shape[0]-center[0],\
-                box_cen[1]-center[1]:box_cen[1]+density_map.shape[1]-center[1],\
-                box_cen[2]-center[2]:box_cen[2]+density_map.shape[2]-center[2]] = den_map
+            box_cen = (np.array(box.shape)+1)//2
+            box[box_cen[0]-center[0]:box_cen[0]+den_map.shape[0]-center[0],\
+                box_cen[1]-center[1]:box_cen[1]+den_map.shape[1]-center[1],\
+                box_cen[2]-center[2]:box_cen[2]+den_map.shape[2]-center[2]] = den_map
             return box
         else:
             raise RuntimeError('Your input density map or oversampleing rate is invalid')
@@ -173,11 +174,12 @@ class simulation():
         abs_index = np.sort(list(set(atom_index))).astype(int)
         abs_r = np.sort(list(set(pix_r))).astype(int)
         q = np.sin(np.arctan(abs_r*det_ps/det_d)/2)/det_lambda
-        scatter_file = os.path.join(os.path.dirname(__file__), 'aux/scattering.npy')
-        scatterf = np.load(scatter_file)[()]
+        scatter_file = os.path.join(os.path.dirname(__file__), 'aux/scattering.json')
+        with open(scatter_file, 'r') as fp:
+            scatterf = json.load(fp)
         abc = np.zeros((len(abs_index), 9))
         for ind,k in enumerate(abs_index):
-            abc[ind] = scatterf[k]
+            abc[ind] = scatterf[str(k)]
         gau_1 = gaussian(abc[:,0],abc[:,1],abc[:,8],q)
         gau_2 = gaussian(abc[:,2],abc[:,3],abc[:,8],q)
         gau_3 = gaussian(abc[:,4],abc[:,5],abc[:,8],q)
@@ -202,7 +204,7 @@ class simulation():
         import psutil
         import time
         import gc
-        from spipy.analyse import q
+        from ..analyse import q
 
         if self.order is None or self.atoms['index'] is None:
             raise RuntimeError('Please configure and generate euler first!')
@@ -211,7 +213,7 @@ class simulation():
         det_d = np.float32(self.config_param['parameters|detd'])
         det_ps = np.float32(self.config_param['parameters|pixsize'])
         det_lambda = np.float32(self.config_param['parameters|lambda'])
-        poisson = self.config_param['make_data|poisson']
+        to_photons = self.config_param['make_data|photons']
         resolution = 1.0/(q.cal_q(det_d,det_lambda,det_l,det_ps).max())
         ati = self.atoms['index']
         ati = ati.reshape((len(ati),1)).astype(int)
@@ -236,13 +238,15 @@ class simulation():
             time0 = time.time()
             Natoms = self.rotate_mol(euler_angle)
             dr = Natoms['coordinate']    # dr.shape=(Nr,3) the position vector of atoms, in angstrom
-            dr_ = dr*resolution
-            #project the molecule onto the xOy plane                     
 
-            projection = np.zeros((det_l,det_l))
-            dr_projection = (np.round(dr_[:,0:2] + (det_l/2))).astype(int)
-            for x,y in dr_projection:
-                projection[x,y] += 1 
+            if projections is not None:
+                # toy projection of the molecule onto the xOy plane 
+                dr_ = dr / resolution
+                projection = np.zeros((det_l,det_l))
+                dr_projection = (np.round(dr_[:,0:2] + (det_l/2))).astype(int)
+                for ii, xy in enumerate(dr_projection):
+                    projection[xy[0],xy[1]] += ati[ii]
+                projections[ind] = projection
 
             pat = np.zeros(len(dk),dtype=np.complex64)
             if self.config_param['make_data|ram_first']:
@@ -257,7 +261,7 @@ class simulation():
                         temp *= scatt
                     pat[ii] = np.sum(temp)
                 if verbose:
-                    print u"RAM (MB): ",psutil.Process(os.getpid()).memory_info().rss/1024.0**2
+                    print(u"RAM (MB): ",psutil.Process(os.getpid()).memory_info().rss/1024.0**2)
             else:
                 # forced to use cblas lib to accelerate
                 gemm = get_blas_funcs("gemm",[dr.astype(np.float32),dk.T.astype(np.float32)])
@@ -269,20 +273,18 @@ class simulation():
                 else:
                     pat *= scatt
                 if verbose:
-                    print u"RAM (MB): ",psutil.Process(os.getpid()).memory_info().rss/1024.0**2
+                    print(u"RAM (MB): ",psutil.Process(os.getpid()).memory_info().rss/1024.0**2)
                 pat = np.sum(pat,axis=0)
             pat = pat.reshape((det_l, det_l))
             pat = np.abs(pat)**2
             # evaluate adu and add noise
             photons = float(self.config_param['make_data|fluence'] / 1e10)
             adu = photons * 12398.419 / det_lambda / 1e2
-            if poisson:
+            if to_photons:
                 patt[ind] = np.random.poisson( pat * photons/np.sum(pat) ).astype(float)
             else:
                 patt[ind] = pat * adu/np.sum(pat)
-            projections[ind] = projection
 
-            del projection
             del pat
             gc.collect()
             print('Done. Time (s): '+str(time.time()-time0))
@@ -296,12 +298,17 @@ class simulation():
         det_l = self.config_param['parameters|detsize']
         bstopR = self.config_param['parameters|stoprad']
         patterns = np.zeros((num_pat, det_l, det_l))
-        projections = np.zeros((num_pat, det_l, det_l))
+        if self.config_param['make_data|projection']:
+            projections = np.zeros((num_pat, det_l, det_l))
+        else:
+            projections = None
+
         # generate patterns
         self.generate_pattern(self.euler, patterns, projections, verbose)
         if bstopR is not None and bstopR > 0:
             beam_stop = radp.circle(2, bstopR) + (np.array(patterns.shape[1:])-1)/2
             patterns[:,beam_stop[:,0],beam_stop[:,1]] = 0
+
         output = {'oversampling_rate' : self.oversampl, \
                     'euler_angles' : self.euler, \
                     'rotation_order' : self.order, \
@@ -332,10 +339,11 @@ def single_process(pdb_file, param, euler_mode='random', euler_order='zxz', eule
         savef.create_dataset('oversampling_rate', data=dataset['oversampling_rate'])
         savef.create_dataset('rotation_order', data=dataset['rotation_order'])
         savef.create_dataset('patterns', data=dataset['patterns'], chunks=True, compression="gzip")
-        savef.create_dataset('projections', data=dataset['projections'], chunks=True, compression="gzip")  
+        if dataset['projections'] is not None:
+            savef.create_dataset('projections', data=dataset['projections'], chunks=True, compression="gzip")  
         savef.create_dataset('euler_angles', data=dataset['euler_angles'], chunks=True, compression="gzip")
         grp = savef.create_group('simu_parameters')
-        for k, v in dataset['simu_parameters'].iteritems():
+        for k, v in dataset['simu_parameters'].items():
             grp.create_dataset(k, data=v)
         savef.close()
         return
@@ -383,7 +391,7 @@ def multi_process(save_dir, pdb_file, param, euler_mode='random', euler_order='z
 
         savef = h5py.File(savefilename, 'w')
         grp = savef.create_group('simu_parameters')
-        for k, v in param.iteritems():
+        for k, v in param.items():
             grp.create_dataset(k, data=v)
         savef.create_dataset('patterns', (num_pat, \
         param['parameters|detsize'], param['parameters|detsize']), \
@@ -422,7 +430,8 @@ def multi_process(save_dir, pdb_file, param, euler_mode='random', euler_order='z
             savef = None
     
     savef['patterns'][pool_bin[m_rank]:pool_bin[m_rank+1]] = solution['patterns']
-    savef['projections'][pool_bin[m_rank]:pool_bin[m_rank+1]] = solution['projections']
+    if solution['projections'] is not None:
+        savef['projections'][pool_bin[m_rank]:pool_bin[m_rank+1]] = solution['projections']
     savef['euler_angles'][pool_bin[m_rank]:pool_bin[m_rank+1]] = solution['euler_angles']
     savef.close()
 

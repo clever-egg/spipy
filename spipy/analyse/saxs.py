@@ -1,8 +1,7 @@
 import numpy as np
 import sys
-sys.path.append(__file__.split('/analyse/saxs.py')[0]+'/image/')
-import radp
-import q as spi_q
+from ..image import radp
+from . import q as spi_q
 
 def help(module):
 	if module=="grid":
@@ -16,6 +15,7 @@ def help(module):
 		print("      option: mask (0/1 binary pattern, shape=(Nx, Ny), 1 means masked area, 0 means useful area, default=None)")
 		print("      option: small_r (int, radius of search area for center allocation candidates, pixel)")
 		print("      option: large_r (int, radius of area for sampling frediel twin points, pixel)")
+		print("    -> Output: center, a numpy 1d array, [cx, cy], int")
 		return
 	elif module=="inten_profile_vaccurate":
 		print("This finction is used to calculate accumulate intensity profile of SPI patterns")
@@ -108,12 +108,12 @@ def friedel_search(pattern, estimated_center, mask=None, small_r=None, large_r=N
 	else:
 		fred_z = [int(large_r)*2, int(large_r)*2]
 	score = np.inf
-	center = [0,0]
+	center = np.array([0,0], dtype=int)
 
 	for cen in search_zone.T.reshape(np.product(search_zone[0].shape),2):
 		fred_zone = np.mgrid[cen[0]-fred_z[0]/2:cen[0]+fred_z[0]/2,cen[1]-fred_z[1]/2:cen[1]+fred_z[1]/2]
-		fred_zone = fred_zone.reshape((2,fred_zone.shape[1]*fred_zone.shape[2]))
-		inv_fred_zone = np.array([2*cen[0] - fred_zone[0], 2*cen[1] - fred_zone[1]])
+		fred_zone = fred_zone.reshape((2,fred_zone.shape[1]*fred_zone.shape[2])).astype(int)
+		inv_fred_zone = np.array([2*cen[0] - fred_zone[0], 2*cen[1] - fred_zone[1]], dtype=int)
 		if mask is not None:
 			no_mask_area = (mask[fred_zone[0],fred_zone[1]]==0) & (mask[inv_fred_zone[0],inv_fred_zone[1]]==0)
 			this_score = 2 * np.sum(np.abs(maskpattern[fred_zone[0],fred_zone[1]] - maskpattern[inv_fred_zone[0], inv_fred_zone[1]])\
@@ -128,27 +128,22 @@ def friedel_search(pattern, estimated_center, mask=None, small_r=None, large_r=N
 		if score>this_score:
 			center = cen
 			score = this_score
-	return center
+	return center.astype(int)
 
 # calculate accumulate intensity profile of SPI patterns
 def inten_profile_vaccurate(dataset, mask, *exp_param):
 	if len(exp_param)<4:
 		raise ValueError("Please be sure to give all exp_param ! Exit")
-	qinfo = spi_q.cal_q(exp_param[0], exp_param[1], exp_param[2]*4, exp_param[3]/4.0)
+	qinfo = spi_q.cal_q(exp_param[0], exp_param[1], exp_param[2], exp_param[3])
 	data = dataset
 	num = data.shape[0]
 	size = data.shape[1:]
 	intens = []
 	rofq = np.inf
-	import scipy.ndimage.interpolation as ndint
-	if mask is not None:
-		newmask = np.round(ndint.zoom(mask, 4)).astype(int)
-	else:
-		newmask = None
+
 	for ind,pat in enumerate(data):
-		newpat = ndint.zoom(pat, 4)
-		newcenter = friedel_search(newpat, [size[0]*4, size[1]*4], mask)
-		intens_one = radp.radial_profile_2d(newpat, newcenter, newmask)
+		center = friedel_search(pat, [size[0]//2, size[1]//2], mask)
+		intens_one = radp.radial_profile(pat, center, mask)
 		intens.append(intens_one[:,1])
 		rofq = min(rofq, len(intens_one[:,1]))
 		sys.stdout.write(str(ind)+'/'+str(num)+' patterns\r')
@@ -163,18 +158,18 @@ def inten_profile_vaccurate(dataset, mask, *exp_param):
 def inten_profile_vfast(dataset, mask, *exp_param):
 	if len(exp_param)<4:
 		raise ValueError("Please be sure to give all exp_param ! Exit")
+	import scipy.ndimage.interpolation as ndint
+
 	qinfo = spi_q.cal_q(exp_param[0], exp_param[1], exp_param[2]*4, exp_param[3]/4.0)
 	saxs = cal_saxs(dataset)
 	center = friedel_search(saxs, [saxs.shape[0]/2, saxs.shape[1]/2], mask)
-	import radp
-	import scipy.ndimage.interpolation as ndint
 	newsaxs = newpat = ndint.zoom(saxs, 4)
 	if mask is not None:
 		newmask = np.round(ndint.zoom(mask, 4)).astype(int)
 	else:
 		newmask = None
 	newcenter = center * 4
-	intens = radp.radial_profile_2d(newsaxs, newcenter, newmask)
+	intens = radp.radial_profile(newsaxs, newcenter, newmask)
 	return np.vstack((qinfo,intens[0:len(qinfo),1])).T
 
 # calculate the saxs pattern of an SPI data set
@@ -203,13 +198,17 @@ def centering(pat, estimated_center, mask=None, small_r=None, large_r=None):
 		bottom = center[0] + c2top + 1
 	err = (bottom - top) - (right - left)
 	if err>0:
-		bottom = bottom - err/2
-		top = top + err/2
+		bottom = bottom - err//2
+		top = top + err//2
 	elif err<0:
-		right = right + err/2
-		left = left - err/2
+		right = right + err//2
+		left = left - err//2
 	else:
 		pass
+	top = int(top)
+	bottom = int(bottom)
+	left = int(left)
+	right = int(right)
 	if mask is None:
 		return pat[top:bottom,left:right]
 	else:
@@ -221,7 +220,7 @@ def particle_size(saxs, estimated_center, exparam=None, high_filter_cut=0.3, pow
 	# high pass filter
 	csaxs, cmask = centering(saxs, estimated_center, mask)
 	center = np.array(csaxs.shape)/2
-	Iq = radp.radial_profile_2d(csaxs, center, cmask)[:,1]
+	Iq = radp.radial_profile(csaxs, center, cmask)[:,1]
 	cut = Iq.max()*high_filter_cut
 	width = np.where(Iq>cut)[0][-1]
 	x, y = grid(csaxs)
@@ -232,7 +231,7 @@ def particle_size(saxs, estimated_center, exparam=None, high_filter_cut=0.3, pow
 	auto_coor = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(saxs_filtered**power))))
 	# detect particle size
 	auto_coor_center = np.where(auto_coor==auto_coor.max())
-	radp_auto_coor = radp.radial_profile_2d(auto_coor, auto_coor_center)[:,1]
+	radp_auto_coor = radp.radial_profile(auto_coor, auto_coor_center)[:,1]
 	# find peak
 	"""
 	derive = (radp_auto_coor[1:] - radp_auto_coor[:-1])/radp_auto_coor[:-1]
@@ -279,7 +278,7 @@ def particle_size_sp(dataset, exparam, fitarea, badsearchr, method, mask=None, c
 			thiscenter = friedel_search(d, size/2, mask, 10, np.min([50, np.min(size/2)]))
 		else:
 			thiscenter = center
-		Iq = radp.radial_profile_2d(d, thiscenter, mask)[nr:nR,1]
+		Iq = radp.radial_profile(d, thiscenter, mask)[nr:nR,1]
 		q_min_index = argrelextrema(Iq, np.less, order=1)[0]
 		q_max_index = argrelextrema(Iq, np.greater, order=1)[0]
 		q_min_index = np.sort(q_min_index)

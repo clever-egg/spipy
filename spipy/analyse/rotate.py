@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.ndimage import interpolation
-import criterion
+from . import criterion
 import copy
 
 def help(module):

@@ -1,12 +1,10 @@
 import numpy as np
 import sys
-from itertools import product
-import era
 
-from mappers import *
+from .mappers import Mapper
+from .mappers import isValid
 
 from mpi4py import MPI
-from mappers import isValid
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -145,11 +143,11 @@ def DM(I, iters, **args):
     args['c_dtype'] = c_dtype
 
     if isValid('Mapper', args) : 
-        if rank == 0 : print '\nusing user defined mapper'
+        if rank == 0 : print('\nusing user defined mapper')
         Mapper = args['Mapper']
     else :
-        if rank == 0 : print '\nusing default cpu mapper'
-        from mappers import Mapper
+        if rank == 0 : print('\nusing default cpu mapper')
+        from .mappers import Mapper
     
     eMods     = []
     eCons     = []
@@ -160,7 +158,7 @@ def DM(I, iters, **args):
     modes_sup = mapper.Psup(modes)
 
     if iters > 0  and rank==0:
-        print '\nalgrithm progress iteration convergence modulus error'
+        print('\nalgrithm progress iteration convergence modulus error')
     
     for i in range(iters) :
         
@@ -181,7 +179,7 @@ def DM(I, iters, **args):
 
         eMod = mapper.Emod(modes_sup)
         
-        if rank == 0 : era.update_progress(i / max(1.0, float(iters-1)), 'DM', i, eCon, eMod )
+        if rank == 0 : update_progress(i / max(1.0, float(iters-1)), 'DM', i, eCon, eMod )
         
         eMods.append(eMod)
         eCons.append(eCon)
@@ -196,4 +194,21 @@ def DM(I, iters, **args):
     
     return O, info
 
-
+def update_progress(progress, algorithm, i, emod, esup):
+    barLength = 15 # Modify this to change the length of the progress bar
+    status = ""
+    if isinstance(progress, int):
+        progress = float(progress)
+    if not isinstance(progress, float):
+        progress = 0
+        status = "error: progress var must be float\r\n"
+    if progress < 0:
+        progress = 0
+        status = "Halt...\r\n"
+    if progress >= 1:
+        progress = 1
+        status = "Done...\r\n"
+    block = int(round(barLength*progress))
+    text = "\r{0}: [{1}] {2}% {3} {4} {5} {6} {7}".format(algorithm, "#"*block + "-"*(barLength-block), int(progress*100), i, emod, esup, status, " " * 5) # this last bit clears the line
+    sys.stdout.write(text)
+    sys.stdout.flush()

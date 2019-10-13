@@ -1,5 +1,16 @@
 *.pyc
 .DS_Store
+*.h5
+*.cxi
+*.bin
+*.pdf
+*.png
+*.npy
+*.byt
+*.pdb
+*.ccp4
+.vscode
 emc_MAC
 emc_LINUX
 bh_tsne
+__pycache__

@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-import ConfigParser
+import configparser
 from collections import OrderedDict
 
 class MultiOrderedDict(OrderedDict):
@@ -11,12 +11,12 @@ class MultiOrderedDict(OrderedDict):
             super(OrderedDict, self).__setitem__(key, value)
 
 def get_param(config_file, section, tag):
-    config      = ConfigParser.ConfigParser()
+    config      = configparser.ConfigParser()
     config.read(config_file)
     return config.get(section, tag)
 
 def get_multi_params(config_file, section, tag):
-    config      = ConfigParser.RawConfigParser(dict_type=MultiOrderedDict)
+    config      = configparser.RawConfigParser(dict_type=MultiOrderedDict)
     config.read(config_file)
     return config.get(section, tag)
 
@@ -28,7 +28,7 @@ def get_filename(config_file, section, tag):
     return param
 
 def get_detector_config(config_file, show=False):
-    config      = ConfigParser.ConfigParser()
+    config      = configparser.ConfigParser()
     config.read(config_file)
     params      = OrderedDict()
     params['wavelength']   = config.getfloat('parameters', 'lambda')
@@ -49,12 +49,12 @@ def get_detector_config(config_file, show=False):
     # Optional arguments
     try:
         params['ewald_rad'] = config.getfloat('parameters', 'ewald_rad')
-    except ConfigParser.NoOptionError:
+    except configparser.NoOptionError:
         params['ewald_rad'] = params['detd'] / params['pixsize']
 
     try:
         params['mask_fname'] = config.get('make_detector', 'in_mask_file')
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         params['mask_fname'] = None
 
     try:
@@ -65,15 +65,13 @@ def get_detector_config(config_file, show=False):
         else:
             params['detc_x'] = int(detcstr[0])
             params['detc_y'] = int(detcstr[1])
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         params['detc_x']   = (params['dets_x']-1)/2.
         params['detc_y']   = (params['dets_y']-1)/2.
     
     if show:
         for k,v in params.items():
-            #print '{:<15}:{:10.4f}'.format(k, v)
-            #print '{:<15}:{:>10}'.format(k, v)
-            logging.info('{:<15}:{:>10}'.format(k, v))
+            logging.info('{:<15}:{:>10}'.format(k, str(v)))
     return params
 
 def compute_q_params(det_dist, dets_x, dets_y, pix_size, in_wavelength, show=False):
@@ -102,9 +100,7 @@ def compute_q_params(det_dist, dets_x, dets_y, pix_size, in_wavelength, show=Fal
 
     if show:
         for k,v in params.items():
-            #print '{:<15}:{:10.4f}'.format(k, v)
             logging.info('{:<15}:{:10.4f}'.format(k, v))
-        #print '{:<15}:{:10.4f}'.format("voxel-length of reciprocal volume", fov_in_A/half_p_res)
         logging.info('{:<15}:{:10.4f}'.format("voxel-length of reciprocal volume", fov_in_A/half_p_res))
     return params
 

@@ -1,9 +1,8 @@
 import numpy as np
 import sys
 
-
-from mappers import Mapper
-from mappers import isValid
+from .mappers import Mapper
+from .mappers import isValid
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -104,11 +103,11 @@ def ERA(I, iters, **args):
     args['c_dtype'] = c_dtype
 
     if isValid('Mapper', args) : 
-        if rank == 0 : print '\nusing user defined mapper'
+        if rank == 0 : print('\nusing user defined mapper')
         Mapper = args['Mapper']
     else :
-        if rank == 0 : print '\nusing default cpu mapper'
-        from mappers import Mapper 
+        if rank == 0 : print('\nusing default cpu mapper')
+        from .mappers import Mapper 
     
     eMods     = []
     eCons     = []
@@ -126,7 +125,7 @@ def ERA(I, iters, **args):
     modes  = mapper.modes
 
     if iters > 0 and rank == 0 :
-        print '\n\nalgrithm progress iteration convergence modulus error'
+        print('\n\nalgrithm progress iteration convergence modulus error')
     
     for i in range(iters) :
         modes0 = modes.copy()

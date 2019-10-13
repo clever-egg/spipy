@@ -1,10 +1,8 @@
 import sys
 import numpy as np
 import multiprocessing as mp
-sys.path.append(__file__.split("/image/preprocess.py")[0] + "/analyse")
-import saxs
-import radp
-import criterion
+from ..analyse import saxs, criterion
+from . import radp
 
 def help(module):
 	if module=="fix_artifact":
@@ -70,7 +68,7 @@ def _fix_artifact_auto_single_process(data, label, center, I_prime, mask):
 			maskdata = pats * (1-mask)
 		else:
 			maskdata = pats
-		ref_Iq = radp.radial_profile_2d(I_qphi, center_0, mask)
+		ref_Iq = radp.radial_profile(I_qphi, center_0, mask)
 
 		for ind,rad in enumerate(ref_Iq[:,0]):
 			roi = np.where((r==rad) & (I_qphi>0))
@@ -97,7 +95,7 @@ def _fix_artifact_auto_single_process(data, label, center, I_prime, mask):
 
 
 def fix_artifact_auto(dataset, estimated_center, njobs=1, mask=None, vol_of_bins=100):
-	import classify
+	from spipy.image import classify
 	njobs = abs(int(njobs))
 	dataset[np.isnan(dataset)] = 0
 	dataset[np.isinf(dataset)] = 0
@@ -178,10 +176,11 @@ def fix_artifact(dataset, estimated_center, artifacts, mask=None):
 	print("Fix unique artifacts ...")
 	for loc in artifacts[uniq_inv_art_loc]:
 		r = np.linalg.norm(loc)
-		shell = radp.shells_2d([r], powder.shape, center)[0]
+		shell = radp.shells([r], powder.shape, center)[0]
 		mean_intens = np.mean(dataset[:, shell[:,0], shell[:,1]], axis=1)
 		dataset[:, loc[0], loc[1]] = mean_intens
 	return dataset
+
 
 def adu2photon(dataset, mask=None, photon_percent=0.1, nproc=1, transfer=True, force_poisson=False):
 
@@ -211,7 +210,7 @@ def adu2photon(dataset, mask=None, photon_percent=0.1, nproc=1, transfer=True, f
 			out = _transfer(dataset, no_photon_percent, adu, force_poisson)
 		else:
 			result = []
-			partition = range(0, len(dataset), np.ceil(len(dataset)/float(nproc)).astype(int))
+			partition = list(range(0, len(dataset), np.ceil(len(dataset)/float(nproc)).astype(int)))
 			if len(partition)==nproc:
 				partition.append(len(dataset))
 			pool = mp.Pool(processes = nproc)
@@ -256,6 +255,7 @@ def _transfer(data, no_photon_percent, adu, force_poisson):
 			newp = np.round(pat/real_adu).astype(int)
 			re[ind] = newp
 	return re
+
 
 def hit_find(dataset, background, radii_range=None, mask=None, cut_off=None):
 	dataset[np.isnan(dataset)] = 0
@@ -313,6 +313,7 @@ def hit_find(dataset, background, radii_range=None, mask=None, cut_off=None):
 			label = 1 - label
 	return label
 
+
 def hit_find_pearson(dataset, background, radii_range=None, mask=None, max_cc=0.5):
 	dataset[np.isnan(dataset)] = 0
 	dataset[np.isinf(dataset)] = 0
@@ -341,16 +342,16 @@ def hit_find_pearson(dataset, background, radii_range=None, mask=None, max_cc=0.
 			center[0] = radii_range[0]
 			center[1] = radii_range[1]
 		# calculate radial profile
-		radp_bg = radp.radial_profile_2d(background, center, mask)[radii_range[2]:radii_range[3],1]
+		radp_bg = radp.radial_profile(maskbackground, center, mask)[radii_range[2]:radii_range[3],1]
 		for ind,p in enumerate(maskdataset):
-			radp_d = radp.radial_profile_2d(p, center, mask)[radii_range[2]:radii_range[3],1]
+			radp_d = radp.radial_profile(p, center, mask)[radii_range[2]:radii_range[3],1]
 			cc[ind] = criterion.Pearson_cc(radp_d, radp_bg, 0)
 	else:
 		center = saxs.friedel_search(saxs.cal_saxs(maskdataset), np.array(dsize[1:])/2, mask)
 		# calculate radial profile
-		radp_bg = radp.radial_profile_2d(background, center, mask)[:,1]
+		radp_bg = radp.radial_profile(maskbackground, center, mask)[:,1]
 		for ind,p in enumerate(maskdataset):
-			radp_d = radp.radial_profile_2d(p, center, mask)[:,1]
+			radp_d = radp.radial_profile(p, center, mask)[:,1]
 			cc[ind] = criterion.Pearson_cc(radp_d, radp_bg, 0)
 	# predict
 	label = np.zeros(dsize[0])

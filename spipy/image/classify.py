@@ -1,6 +1,9 @@
 import numpy as np
 import sys
-sys.path.append(__file__.split("/image/classify.py")[0] + '/analyse')
+import os
+import gc
+from ..analyse import saxs
+from . import radp
 
 def help(module):
 	if module=="cluster_fSpec":
@@ -51,8 +54,8 @@ def cluster_fSpec(dataset, mask=None ,low_filter=0.3, decomposition='SVD', ncomp
 		raise RuntimeError("I can't recognize the decomposition method.")
 	if decomposition=="LLE" and LLEmethod not in ['standard', 'modified', 'hessian','ltsa']:
 		raise RuntimeError("I can't recognize the LLE method.")
-	import saxs
-	import radp
+	#import saxs
+	#import radp
 	ncomponent = abs(int(ncomponent))
 	nneighbors = abs(int(nneighbors))
 	clustering = abs(int(clustering))
@@ -74,7 +77,7 @@ def cluster_fSpec(dataset, mask=None ,low_filter=0.3, decomposition='SVD', ncomp
 		print("\nDone.")
 		print("\nStart normalization ...")
 	# normalization
-	center_data = (fdataset.shape[1]/2, fdataset.shape[2]/2)
+	center_data = (fdataset.shape[1]//2, fdataset.shape[2]//2)
 	fdataset = fdataset[:, center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
 	if mask is not None:
 		fmask = mask[center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
@@ -82,10 +85,10 @@ def cluster_fSpec(dataset, mask=None ,low_filter=0.3, decomposition='SVD', ncomp
 		fmask = None
 	center_data = (fdataset.shape[1]/2.0, fdataset.shape[2]/2.0)
 	saxs_data = saxs.cal_saxs(fdataset)
-	saxs_intens = radp.radial_profile_2d(saxs_data, center_data, fmask)
+	saxs_intens = radp.radial_profile(saxs_data, center_data, fmask)
 	dataset_norm = np.zeros(fdataset.shape)
 	for ind,pat in enumerate(fdataset):
-		pat_normed = radp.radp_norm_2d(saxs_intens[:,1], pat, center_data, fmask)
+		pat_normed = radp.radp_norm(saxs_intens[:,1], pat, center_data, fmask)
 		dataset_norm[ind] = pat_normed
 		if verbose:
 			sys.stdout.write("Processing " + str(ind) + "/" + str(len(fdataset)) + " ...\r")
@@ -120,13 +123,10 @@ def cluster_fSpec(dataset, mask=None ,low_filter=0.3, decomposition='SVD', ncomp
 
 
 def cluster_fTSNE(dataset, mask=None, low_filter=0.3, no_dims=2, perplexity=20, use_pca=True, initial_dims=50, max_iter=500, theta=0.5, randseed=-1, clustering=2, njobs=1, verbose=True):
-	import os
-	import gc
+	
 	from sklearn.decomposition import PCA
 	sys.path.append(os.path.join(os.path.dirname(__file__),'bhtsne_source'))
-	import bhtsne
-	import saxs
-	import radp
+	from .bhtsne_source import bhtsne
 
 	no_dims = abs(int(no_dims))
 	initial_dims = abs(int(initial_dims))
@@ -150,7 +150,7 @@ def cluster_fTSNE(dataset, mask=None, low_filter=0.3, no_dims=2, perplexity=20, 
 		print("\nDone.")
 		print("\nStart normalization ...")
 	# normalization
-	center_data = (fdataset.shape[1]/2, fdataset.shape[2]/2)
+	center_data = (fdataset.shape[1]//2, fdataset.shape[2]//2)
 	fdataset = fdataset[:, center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
 	if mask is not None:
 		fmask = mask[center_data[0]-rcenter[0]:center_data[0]+rcenter[0], center_data[1]-rcenter[1]:center_data[1]+rcenter[1]]
@@ -158,10 +158,10 @@ def cluster_fTSNE(dataset, mask=None, low_filter=0.3, no_dims=2, perplexity=20, 
 		fmask = None
 	center_data = (fdataset.shape[1]/2.0, fdataset.shape[2]/2.0)
 	saxs_data = saxs.cal_saxs(fdataset)
-	saxs_intens = radp.radial_profile_2d(saxs_data, center_data, fmask)
+	saxs_intens = radp.radial_profile(saxs_data, center_data, fmask)
 	dataset_norm = np.zeros(fdataset.shape)
 	for ind,pat in enumerate(fdataset):
-		pat_normed = radp.radp_norm_2d(saxs_intens[:,1], pat, center_data, fmask)
+		pat_normed = radp.radp_norm(saxs_intens[:,1], pat, center_data, fmask)
 		dataset_norm[ind] = pat_normed
 		if verbose:
 			sys.stdout.write("Processing " + str(ind) + "/" + str(len(fdataset)) + " ...\r")

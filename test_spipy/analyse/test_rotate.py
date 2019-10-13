@@ -29,7 +29,7 @@ if __name__=="__main__":
 
 	d1 = np.fromfile(fix).reshape((125,125,125))
 	d2 = np.fromfile(mov).reshape((125,125,125))
-	center = np.array(d1.shape, dtype=int)/2
+	center = np.array(d1.shape, dtype=int)//2
 	d1_small = copy.deepcopy(d1[center[0]-outer_cut:center[0]+outer_cut, center[1]-outer_cut:center[1]+outer_cut, center[2]-outer_cut:center[2]+outer_cut])
 	d2_small = copy.deepcopy(d2[center[0]-outer_cut:center[0]+outer_cut, center[1]-outer_cut:center[1]+outer_cut, center[2]-outer_cut:center[2]+outer_cut])
 	d1_small[center[0]-inner_cut:center[0]+inner_cut, center[1]-inner_cut:center[1]+inner_cut, center[2]-inner_cut:center[2]+inner_cut] = 0
@@ -53,7 +53,10 @@ if __name__=="__main__":
 	saved.create_dataset('mov_after_rotate',data=newd2)
 	saved.create_dataset('reverse_r_factor',data=rev_rf_shell)
 	saved.close()
+	# print
+	rotm = rotate.eul2rotm(ea, 'zxz')
 	print("\nd : euler angle = " + str(ea))
+	print("d : rotation matrix = " + str(rotm))
 	print("d : over-all r factor = " + str(rf_all))
 	print("d : over-all reverse r factor = " + str(rev_rf))
 	print("Saving to files : "+os.path.join(save_dir,'compare.h5')+"\n")
