@@ -1,9 +1,8 @@
 # Spipy
 
-### Python toolkits for XFEL single particle imaging (SPI) analysis and reconstruction
+### Python toolkits for XFEL single particle imaging (SPI) analysis and reconstruction, compatible with Python3.x
 
-1. User manual and document, click **[here](https://github.com/LiuLab-CSRC/spipy/wiki)**
+1. User guide and API reference ... (to be done)
+2. GUI ... (to be done)
 
-2. A Graphics User Interface (spipy-GUI), click **[here](https://github.com/estonshi/spipy_gui)**
-
-3. Contact Y.C.S for bug report or other issues: *shiyc12 __AT__ csrc.ac.cn*
+> author email : shiyc12 *AT* csrc.ac.cn
