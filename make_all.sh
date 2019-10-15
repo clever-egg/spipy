@@ -1,6 +1,6 @@
 #! /bin/bash
 root_folder=`pwd`/spipy
-set -e
+#set -e
 
 # get opts
 SKIP_COMPILE=0
@@ -167,6 +167,9 @@ if [ $SKIP_COMPILE -eq 0 ]; then
 fi
 
 
+if [ $? -ne 0 ];then echo "Command failed. Exit"; exit 1;fi
+
+
 # extract test data
 echo "==> Extracting test data"
 cd $root_folder/../test_spipy
@@ -255,7 +258,7 @@ fi
 
 if [ ! -d "${python_path}/site-packages/spipy" ]
 then
-	ln -fs $root_folder ${Ana_path%/bin/python*}/lib/python2.7/site-packages/spipy
+	ln -fs $root_folder ${python_path}/site-packages/spipy
 else
 	echo "[Warning] spipy is already in python3.*/site-packages. Over-write it? [y/n]"
 	flag=0
