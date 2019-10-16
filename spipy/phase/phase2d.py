@@ -36,13 +36,6 @@ def help(module):
 		print("Call this function to start phasing")
 		print("    -> Input: nohup (bool, whether run it in the background, default=False)")
 		return
-	elif module=="show_result":
-		print("This function is used to plot phasing results in a figure")
-		print("    -> Input: ")
-		print("     *option: outpath (IF you move output.h5 to another folder, please give me its path)")
-		print("     *option: exp_param (list detd, lambda, det_r, pix_size in a string. Used to calculate q value.")
-		print("                         e.g. '200,2.5,128,0.3'. If you don't need q info, leave it as default (None))")
-		return
 	else:
 		raise ValueError("No module names "+str(module))
 
@@ -185,7 +178,7 @@ def run_project(num_proc=1, nohup=False, cluster=False):
 	else:
 		raise RuntimeError('num_proc should be a positive integer ! Exit.')
 
-
+'''
 def show_result(outpath=None, exp_param=None):
 	global __workpath
 	if outpath is not None and type(outpath)!=str:
@@ -201,3 +194,4 @@ def show_result(outpath=None, exp_param=None):
 		cmd = cmd + ' ' + str(exp_param)
 
 	subprocess.check_call(cmd, shell=True)
+'''

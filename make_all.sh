@@ -190,6 +190,11 @@ then
 	exit 1
 fi
 
+echo "... configparser"
+tmp=`conda list | grep "configparser"`
+if [ -z "$tmp" ];then conda install configparser;fi
+if [ $? -ne 0 ];then echo $?; exit 1;fi
+
 echo "... numpy"
 tmp=`conda list | grep "numpy"`
 if [ -z "$tmp" ];then conda install numpy=1.16.2;fi
