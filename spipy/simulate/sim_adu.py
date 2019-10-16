@@ -214,7 +214,7 @@ class simulation():
         det_ps = np.float32(self.config_param['parameters|pixsize'])
         det_lambda = np.float32(self.config_param['parameters|lambda'])
         to_photons = self.config_param['make_data|photons']
-        resolution = 1.0/(q.cal_q(det_d,det_lambda,det_l,det_ps).max())
+        resolution = 1.0/(q.cal_q(det_d,det_lambda,det_l/np.sqrt(2.0),det_ps).max())   # in nm
         ati = self.atoms['index']
         ati = ati.reshape((len(ati),1)).astype(int)
         # calculate detector information
@@ -241,7 +241,7 @@ class simulation():
 
             if projections is not None:
                 # toy projection of the molecule onto the xOy plane 
-                dr_ = dr / resolution
+                dr_ = dr / (resolution * 10)
                 projection = np.zeros((det_l,det_l))
                 dr_projection = (np.round(dr_[:,0:2] + (det_l/2))).astype(int)
                 for ii, xy in enumerate(dr_projection):
